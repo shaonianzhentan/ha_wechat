@@ -4,7 +4,10 @@
             "user": {
                 "title": "HomeAssistant家庭助理",
                 "description": "使用微信控制HomeAssistant",
-                "data": {}
+                "data": {
+                    "uid": "用户ID",
+                    "topic": "订阅主题"
+                }
             }
         },
         "error": {},

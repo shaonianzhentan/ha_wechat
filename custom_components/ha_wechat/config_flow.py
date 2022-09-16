@@ -8,7 +8,10 @@ from homeassistant.data_entry_flow import FlowResult
 
 from .const import DOMAIN
 
-DATA_SCHEMA = vol.Schema({})
+DATA_SCHEMA = vol.Schema({
+    vol.Required("uid"): str,
+    vol.Required("topic"): str
+})
 
 class SimpleConfigFlow(ConfigFlow, domain=DOMAIN):
 
@@ -24,4 +27,5 @@ class SimpleConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is None:
             return self.async_show_form(step_id="user", data_schema=DATA_SCHEMA)
 
+        user_input['topic'] = user_input['topic'].repalce('/wechat', '')
         return self.async_create_entry(title=DOMAIN, data=user_input)

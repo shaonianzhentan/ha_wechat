@@ -17,7 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 CONFIG_SCHEMA = cv.deprecated(DOMAIN)
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    wx = Wechat(hass)
+    wx = Wechat(hass, entry.data)
     await wx.init()
     return True
 
@@ -26,37 +26,17 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 class Wechat():
 
-    def __init__(self, hass):
+    def __init__(self, hass, config):
         self.hass = hass
+        self.uid = config.get('uid')
+        self.topic = config.get('topic')
+        self.msg_cache = {}
+        self.encryptor = EncryptHelper(self.uid, 'ha-wechat')
+
         if hass.state == CoreState.running:
             self.connect()
         else:
             hass.bus.listen_once(EVENT_HOMEASSISTANT_STARTED, self.connect)
-
-    # 初始化
-    async def init(self):        
-        # 检测是否安装语音小助手
-        pass
-        # 判断是否生成配置
-
-    # 生成二维码
-    async def generate_qrcode(self):
-        key = str(uuid.uuid1())
-        iv = 'homeassistant'
-        self.encryptor = EncryptHelper(key, iv)
-        # 调用生成二维码接口
-        uid = self.encryptor.md5(key + iv)
-        self.uid = uid
-        self.event_data = {
-            'uid': uid,
-            'data': { 'key': key, 'iv': iv }
-        }
-
-        # 发送扫码通知
-
-        # 监听事件回调
-
-        # 清除并保存key
 
     def connect(self, event=None):
         HOST = 'broker-cn.emqx.io'
@@ -72,23 +52,41 @@ class Wechat():
 
     def on_connect(self, client, userdata, flags, rc):
         print('connectd')
-        self.client.subscribe(self.uid, 2)
+        self.client.subscribe(self.topic, 2)
 
     def on_message(self, client, userdata, msg):
         payload = str(msg.payload.decode('utf-8'))
-        # 解析消息
+        try:
+            # 解析消息
+            data = self.encryptor.Decrypt(payload)
+            msg_id = data['id']
+            now = int(time.time())
+            # 清理缓存消息
+            for key in self.msg_cache:
+                # 缓存消息超过10秒
+                if now - 10 > self.msg_cache[key]:
+                    del self.msg_cache[key]
 
-        # 判断消息是否过期
+            # 判断消息是否过期(5s)
+            if now - 5 > data['time']:
+                print('消息已过期')
+                return
 
-        # 判断消息是否已接收
+            # 判断消息是否已接收
+            if msg_id in self.msg_cache:
+                print('消息已处理')
+                return
 
-        # 接收推送信息
+            # 设置消息为已接收
+            self.msg_cache[msg_id] = now
 
-        # 设置消息为已接收
+            # 调用语音小助手API
 
-        # 调用语音小助手API
-
-        # 推送回复消息
+            # 推送回复消息
+            self.publish({})
+        
+        except Exception as ex:
+            print(ex)
 
     def on_subscribe(self, client, userdata, mid, granted_qos):
         print("On Subscribed: qos = %d" % granted_qos)
@@ -106,8 +104,8 @@ class Wechat():
         now = time.time()
         # 加密消息
         payload = self.encryptor.Encrypt(json.dumps({
-            'id': f'{now}',
+            'id': str(uuid.uuid4()),
             'time': int(now),
             'data': data
         }))
-        self.client.publish(f"ha_wechat/{self.uid}", payload, qos=0)
+        self.client.publish(f"ha_wechat/{self.topic}", payload, qos=0)
