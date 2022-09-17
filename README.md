@@ -35,6 +35,8 @@
 - 最后微信就可以发送控制命令啦
 - 如果不想使用了，发送 `关闭控制模式`
 
+微信教程：https://mp.weixin.qq.com/s/LTsE90PxkbWU9GvWxKJf1A
+
 ## 功能截图
 ![img](https://cdn.jsdelivr.net/gh/shaonianzhentan/image@main/node-red-contrib-ha-wechat/3.png)
 
