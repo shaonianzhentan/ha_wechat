@@ -72,8 +72,8 @@ class Wechat():
         payload = str(msg.payload.decode('utf-8'))
         try:
             # 解析消息
-            data = self.encryptor.Decrypt(payload)
-            
+            data = json.loads(self.encryptor.Decrypt(payload))
+            _LOGGER.debug(data)
             self.clear_cache_msg()
 
             now = int(time.time())
