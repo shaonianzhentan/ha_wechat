@@ -92,15 +92,15 @@ class Wechat():
             self.msg_cache[msg_id] = now
 
             # 调用语音小助手API
-            self.hass.loop.create_task(self.async_process(data['text']))
+            self.hass.loop.create_task(self.async_process(data['text'], conversation_id=msg_id))
 
         except Exception as ex:
             print(ex)
 
-    async def async_process(self, text):
+    async def async_process(self, text, conversation_id):
         agent = await _get_agent(self.hass)
         try:
-            intent_result = await agent.async_process(text, context=Context(), conversation_id=None)
+            intent_result = await agent.async_process(text, context=Context(), conversation_id=conversation_id)
         except intent.IntentHandleError as err:
             intent_result = intent.IntentResponse()
             intent_result.async_set_speech(str(err))
@@ -111,8 +111,10 @@ class Wechat():
 
         # 推送回复消息
         plain = intent_result.speech['plain']
+        topic = f'shaonianzhentan/homeassistant/{conversation_id}'
+        _LOGGER.debug(topic)
         _LOGGER.debug(plain)
-        await self.hass.async_add_executor_job(self.publish, plain)
+        await self.hass.async_add_executor_job(self.publish, topic, plain)
 
     def on_subscribe(self, client, userdata, mid, granted_qos):
         print("On Subscribed: qos = %d" % granted_qos)
@@ -120,18 +122,13 @@ class Wechat():
     def on_disconnect(self, client, userdata, rc):
         print("Unexpected disconnection %s" % rc)
 
-    def publish(self, data):
+    def publish(self, topic, data):
         # 判断当前连接状态
         if self.client._state == 2:
             _LOGGER.debug('断开重连')
             self.client.reconnect()
             self.client.loop_start()
 
-        now = time.time()
         # 加密消息
-        payload = self.encryptor.Encrypt(json.dumps({
-            'id': str(uuid.uuid4()),
-            'time': int(now),
-            'data': data
-        }))
-        self.client.publish(f"ha_wechat/{self.topic}", payload, qos=0)
+        payload = self.encryptor.Encrypt(json.dumps(data))
+        self.client.publish(topic, payload, qos=0)
