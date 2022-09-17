@@ -5,6 +5,14 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 ![visit](https://visitor-badge.laobi.icu/badge?page_id=shaonianzhentan.ha_wechat&left_text=visit)
 
+## 使用前须知
+
+如果不会用，请仔细看文档，文档也看不懂，那就去看微信公众号里发布的详细教程
+
+如果有问题，请在github里提issues，网不行？上不了，那就点击下面的问题反馈链接
+
+问题反馈与功能建议：https://support.qq.com/product/433618
+
 ## 安装
 
 安装完成重启HA，刷新一下页面，在集成里搜索`ha_wechat`即可
@@ -26,8 +34,6 @@
 - 在HomeAssistant集成中添加本插件，配置相关信息
 - 最后微信就可以发送控制命令啦
 - 如果不想使用了，发送 `关闭控制模式`
-
-问题反馈与功能建议：https://support.qq.com/product/433618
 
 ## 功能截图
 ![img](https://cdn.jsdelivr.net/gh/shaonianzhentan/image@main/node-red-contrib-ha-wechat/3.png)
