@@ -112,7 +112,7 @@ class Wechat():
         # 推送回复消息
         plain = intent_result.speech['plain']
         _LOGGER.debug(plain)
-        await hass.async_add_executor_job(self.publish, plain)
+        await self.hass.async_add_executor_job(self.publish, plain)
 
     def on_subscribe(self, client, userdata, mid, granted_qos):
         print("On Subscribed: qos = %d" % granted_qos)
