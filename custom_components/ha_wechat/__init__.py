@@ -63,9 +63,9 @@ class Wechat():
     # 清理缓存消息
     def clear_cache_msg(self):
         now = int(time.time())
-        for key in self.msg_cache:
+        for key in list(self.msg_cache.keys()):
             # 缓存消息超过10秒
-            if now - 10 > self.msg_cache[key]:
+            if key in self.msg_cache and now - 10 > self.msg_cache[key]:
                 del self.msg_cache[key]
 
     def on_message(self, client, userdata, msg):
