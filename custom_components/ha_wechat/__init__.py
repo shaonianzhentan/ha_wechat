@@ -45,7 +45,7 @@ class Wechat():
             hass.bus.listen_once(EVENT_HOMEASSISTANT_STARTED, self.connect)
 
     def connect(self, event=None):
-        HOST = 'broker-cn.emqx.io'
+        HOST = 'test.mosquitto.org'
         PORT = 1883
         client = mqtt.Client()        
         self.client = client
