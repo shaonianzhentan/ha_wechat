@@ -107,11 +107,11 @@ class Wechat():
 
         if intent_result is None:
             intent_result = intent.IntentResponse()
-            intent_result.async_set_speech("Sorry, I didn't understand that")
+            intent_result.async_set_speech("抱歉, 我不知道你在说啥")
 
         # 推送回复消息
         plain = intent_result.speech['plain']
-        topic = f'shaonianzhentan/homeassistant/{conversation_id}'
+        topic = f'ha_wechat/{conversation_id}'
         _LOGGER.debug(topic)
         _LOGGER.debug(plain)
         await self.hass.async_add_executor_job(self.publish, topic, plain)
