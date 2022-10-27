@@ -20,14 +20,20 @@ _LOGGER = logging.getLogger(__name__)
 CONFIG_SCHEMA = cv.deprecated(DOMAIN)
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    config = entry.data
     wx = await hass.async_add_executor_job(
         Wechat,
         hass,
-        entry.data
+        config
     )
+    hass.data[DOMAIN + config.get('uid')] = wx
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    config = entry.data
+    key = DOMAIN + config.get('uid')
+    hass.data[key].unload()
+    del hass.data[key]
     return True
 
 class Wechat():
@@ -57,8 +63,11 @@ class Wechat():
         client.loop_start()
 
     def on_connect(self, client, userdata, flags, rc):
-        print('connectd')
+        print('【ha_wechat】connectd', self.topic)
         self.client.subscribe(self.topic, 2)
+
+    def unload(self):
+        self.client.disconnect()
 
     # 清理缓存消息
     def clear_cache_msg(self):
@@ -79,13 +88,13 @@ class Wechat():
             now = int(time.time())
             # 判断消息是否过期(5s)
             if now - 5 > data['time']:
-                print('消息已过期')
+                print('【ha_wechat】消息已过期')
                 return
 
             msg_id = data['id']
             # 判断消息是否已接收
             if msg_id in self.msg_cache:
-                print('消息已处理')
+                print('【ha_wechat】消息已处理')
                 return
 
             # 设置消息为已接收
@@ -117,10 +126,10 @@ class Wechat():
         await self.hass.async_add_executor_job(self.publish, topic, plain)
 
     def on_subscribe(self, client, userdata, mid, granted_qos):
-        print("On Subscribed: qos = %d" % granted_qos)
+        print("【ha_wechat】On Subscribed: qos = %d" % granted_qos)
 
     def on_disconnect(self, client, userdata, rc):
-        print("Unexpected disconnection %s" % rc)
+        print("【ha_wechat】Unexpected disconnection %s" % rc)
 
     def publish(self, topic, data):
         # 判断当前连接状态
