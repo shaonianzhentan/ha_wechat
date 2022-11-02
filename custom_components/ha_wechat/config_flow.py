@@ -25,4 +25,5 @@ class SimpleConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_show_form(step_id="user", data_schema=DATA_SCHEMA)
 
         user_input['topic'] = user_input['topic'].replace('/wechat', '')
-        return self.async_create_entry(title=DOMAIN, data=user_input)
+        uid = user_input['uid']
+        return self.async_create_entry(title=uid[:10], data=user_input)
