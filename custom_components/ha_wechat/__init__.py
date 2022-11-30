@@ -1,6 +1,7 @@
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import CoreState, HomeAssistant, Context
 import homeassistant.helpers.config_validation as cv
+import re
 
 from homeassistant.const import (
     EVENT_HOMEASSISTANT_STARTED,
@@ -100,8 +101,20 @@ class Wechat():
             # 设置消息为已接收
             self.msg_cache[msg_id] = now
 
+            text = data['text']
+
+            compileX = re.compile("^微信(图片|视频)(((ht|f)tps?):\/\/([\w\-]+(\.[\w\-]+)*\/)*[\w\-]+(\.[\w\-]+)*\/?(\?([\w\-\.,@?^=%&:\/~\+#]*)+)?)")
+            findX = compileX.findall(text)
+            if len(findX) > 0:
+                mc = findX[0]
+                self.hass.bus.fire('ha_wechat', {
+                    'type': 'image' if mc[0] == '图片' else 'video',
+                    'url': mc[1]
+                })
+                return
+
             # 调用语音小助手API
-            self.hass.loop.create_task(self.async_process(data['text'], conversation_id=msg_id))
+            self.hass.loop.create_task(self.async_process(text, conversation_id=msg_id))
 
         except Exception as ex:
             print(ex)
