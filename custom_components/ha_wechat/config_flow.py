@@ -32,4 +32,9 @@ class SimpleConfigFlow(ConfigFlow, domain=DOMAIN):
 
         user_input['topic'] = user_input['topic'].replace('/wechat', '')
         uid = user_input['uid']
+
+        # 检测是否安装
+        if self.hass.data.get(DOMAIN + uid) is not None:
+            return self.async_abort(reason="single_instance_allowed")
+        
         return self.async_create_entry(title=uid[:10], data=user_input)
