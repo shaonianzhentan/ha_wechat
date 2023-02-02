@@ -7,9 +7,6 @@ from homeassistant.const import (
     EVENT_HOMEASSISTANT_STARTED,
     EVENT_STATE_CHANGED,
 )
-# 导入语音小助手
-from homeassistant.helpers import intent
-from custom_components.conversation import _async_converse
 
 import paho.mqtt.client as mqtt
 import logging, json, time, uuid
@@ -120,10 +117,14 @@ class Wechat():
             print(ex)
 
     async def async_process(self, text, conversation_id):
-        result = await _async_converse(self.hass, text, conversation_id=conversation_id, context=Context())
-        intent_result = result.response
-        # 推送回复消息
-        plain = intent_result.speech['plain']
+        conversation = self.hass.data.get('conversation_voice')
+        plain = '请安装最新版语音助手'
+        if conversation is not None:
+            result = await conversation.recognize(text, conversation_id)
+            intent_result = result.response
+            # 推送回复消息
+            plain = intent_result.speech['plain']
+
         topic = f'ha_wechat/{conversation_id}'
         _LOGGER.debug(topic)
         _LOGGER.debug(plain)
