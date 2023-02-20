@@ -1,7 +1,7 @@
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import CoreState, HomeAssistant, Context
 import homeassistant.helpers.config_validation as cv
-import re
+import re, urllib
 
 from homeassistant.const import (
     EVENT_HOMEASSISTANT_STARTED,
@@ -24,14 +24,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass,
         config
     )
-    hass.data[DOMAIN + config.get('uid')] = wx
+    uid = config.get('uid')
+    hass.data[DOMAIN + uid] = wx
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     config = entry.data
-    key = DOMAIN + config.get('uid')
+    uid = config.get('uid')
+    topic = config.get('topic')
+
+    key = DOMAIN + uid
     hass.data[key].unload()
     del hass.data[key]
+
+    qrc = urllib.parse.quote(f'ha:{uid}#{topic}')
+    await hass.services.async_call('persistent_notification', 'create', {
+                'title': '使用【HomeAssistant家庭助理】小程序扫码关联',
+                'message': f'[![qrcode](https://cdn.dotmaui.com/qrc/?t={qrc})](https://github.com/shaonianzhentan/ha_wechat) <font size="6">内含密钥和订阅主题<br/>请勿截图分享</font>'
+            })
     return True
 
 class Wechat():
