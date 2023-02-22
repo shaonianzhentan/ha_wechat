@@ -5,7 +5,7 @@ import voluptuous as vol
 
 from homeassistant.config_entries import ConfigFlow
 from homeassistant.data_entry_flow import FlowResult
-
+import urllib
 from .const import DOMAIN
 
 DATA_SCHEMA = vol.Schema({
@@ -30,11 +30,17 @@ class SimpleConfigFlow(ConfigFlow, domain=DOMAIN):
                 'base': 'conversation'
             })
 
-        user_input['topic'] = user_input['topic'].replace('/wechat', '')
+        topic = user_input['topic'].replace('/wechat', '')
+        user_input['topic'] = topic
         uid = user_input['uid']
 
         # 检测是否安装
         if self.hass.data.get(DOMAIN + uid) is not None:
             return self.async_abort(reason="single_instance_allowed")
-        
+
+        qrc = urllib.parse.quote(f'ha:{uid}#{topic}')
+        await self.hass.services.async_call('persistent_notification', 'create', {
+                    'title': '使用【HomeAssistant家庭助理】小程序扫码关联',
+                    'message': f'[![qrcode](https://cdn.dotmaui.com/qrc/?t={qrc})](https://github.com/shaonianzhentan/ha_wechat) <font size="6">内含密钥和订阅主题<br/>请勿截图分享</font>'
+                })
         return self.async_create_entry(title=uid[:10], data=user_input)

@@ -36,12 +36,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     key = DOMAIN + uid
     hass.data[key].unload()
     del hass.data[key]
-
-    qrc = urllib.parse.quote(f'ha:{uid}#{topic}')
-    await hass.services.async_call('persistent_notification', 'create', {
-                'title': '使用【HomeAssistant家庭助理】小程序扫码关联',
-                'message': f'[![qrcode](https://cdn.dotmaui.com/qrc/?t={qrc})](https://github.com/shaonianzhentan/ha_wechat) <font size="6">内含密钥和订阅主题<br/>请勿截图分享</font>'
-            })
     return True
 
 class Wechat():
