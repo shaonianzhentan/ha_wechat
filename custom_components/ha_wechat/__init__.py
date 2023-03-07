@@ -26,6 +26,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     uid = config.get('uid')
     hass.data[DOMAIN + uid] = wx
+
+    if hass.services.has_service(DOMAIN, 'qrcode') == False:
+        async def qrcode_service(service):
+            data = service.data
+            uid = data.get('uid')
+            topic = data.get('topic')
+            qrc = urllib.parse.quote(f'ha:{uid}#{topic}')
+            await hass.services.async_call('persistent_notification', 'create', {
+                        'title': '使用【HomeAssistant家庭助理】小程序扫码关联',
+                        'message': f'[![qrcode](https://cdn.dotmaui.com/qrc/?t={qrc})](https://github.com/shaonianzhentan/ha_wechat) <font size="6">内含密钥和订阅主题<br/>请勿截图分享</font>'
+                    })
+        hass.services.async_register(DOMAIN, 'qrcode', qrcode_service)
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
