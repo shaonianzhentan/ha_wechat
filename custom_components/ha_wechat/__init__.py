@@ -27,16 +27,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     uid = config.get('uid')
     hass.data[DOMAIN + uid] = wx
 
+    # 注册二维码服务
     if hass.services.has_service(DOMAIN, 'qrcode') == False:
         async def qrcode_service(service):
             data = service.data
             uid = data.get('uid')
             topic = data.get('topic')
+
+            wx = hass.data.get(DOMAIN + uid)
+            if wx is None:
+                await persistent_notification(hass, '请先添加集成进行配置')
+                return
+            elif wx.is_connected == False:
+                await persistent_notification(hass, '当前服务未连接，请重载集成后再试')
+                return
+
             qrc = urllib.parse.quote(f'ha:{uid}#{topic}')
-            await hass.services.async_call('persistent_notification', 'create', {
-                        'title': '使用【HomeAssistant家庭助理】小程序扫码关联',
-                        'message': f'[![qrcode](https://cdn.dotmaui.com/qrc/?t={qrc})](https://github.com/shaonianzhentan/ha_wechat) <font size="6">内含密钥和订阅主题<br/>请勿截图分享</font>'
-                    })
+            await persistent_notification(hass, f'[![qrcode](https://cdn.dotmaui.com/qrc/?t={qrc})](https://github.com/shaonianzhentan/ha_wechat) <font size="6">内含密钥和订阅主题<br/>请勿截图分享</font>',
+                                          '使用【HomeAssistant家庭助理】小程序扫码关联')
+
         hass.services.async_register(DOMAIN, 'qrcode', qrcode_service)
     return True
 
@@ -50,6 +59,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     del hass.data[key]
     return True
 
+async def persistent_notification(hass, message, title='HomeAssistant家庭助理'):
+    await hass.services.async_call('persistent_notification', 'create', { 'title': title, 'message': message })
+
 class Wechat():
 
     def __init__(self, hass, config):
@@ -58,6 +70,7 @@ class Wechat():
         self.topic = config.get('topic')
         self.msg_cache = {}
         self.encryptor = EncryptHelper(self.uid, 'ha-wechat')
+        self.is_connected = False
 
         if hass.state == CoreState.running:
             self.connect()
@@ -79,6 +92,7 @@ class Wechat():
     def on_connect(self, client, userdata, flags, rc):
         print('【ha_wechat】connectd', self.topic)
         self.client.subscribe(self.topic, 2)
+        self.is_connected = True
 
     def unload(self):
         self.client.disconnect()
@@ -151,6 +165,7 @@ class Wechat():
 
     def on_disconnect(self, client, userdata, rc):
         print("【ha_wechat】Unexpected disconnection %s" % rc)
+        self.is_connected = False
 
     def publish(self, topic, data):
         # 判断当前连接状态
