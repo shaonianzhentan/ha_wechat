@@ -11,7 +11,8 @@
 [![badge](https://img.shields.io/badge/wechat-微信控制-6cae6a?logo=wechat&style=for-the-badge)](https://github.com/shaonianzhentan/ha_wechat)
 [![badge](https://img.shields.io/badge/android-家庭助理-purple?logo=android&style=for-the-badge)](https://github.com/shaonianzhentan/ha_app)
 
-
+ `QQ交流群：61417349`
+ 
 ## 安装
 
 安装完成重启HA，刷新一下页面，在集成里搜索`ha_wechat`即可
