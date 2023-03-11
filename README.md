@@ -51,7 +51,7 @@
 
 
 ## 功能截图
-![img](https://cdn.jsdelivr.net/gh/shaonianzhentan/image@main/node-red-contrib-ha-wechat/3.png)
+![img](https://github.com/shaonianzhentan/image/raw/main/node-red-contrib-ha-wechat/3.png)
 
 ## 如果这个项目对你有帮助，请我喝杯<del style="font-size: 14px;">咖啡</del>奶茶吧😘
 |支付宝|微信|
