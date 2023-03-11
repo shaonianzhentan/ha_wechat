@@ -2,7 +2,7 @@
 
 微信扫一扫，关注后使用微信控制HomeAssistant
 
-<img src="https://ha.jiluxinqing.com/img/wechat-channel.png" height="160" alt="HomeAssistant家庭助理" title="HomeAssistant家庭助理"> 
+<img src="https://github.com/shaonianzhentan/image/raw/main/ha_wechat/wechat-channel.png" height="160" alt="HomeAssistant家庭助理" title="HomeAssistant家庭助理"> 
 
 [![hacs_badge](https://img.shields.io/badge/Home-Assistant-049cdb)](https://www.home-assistant.io/)
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
@@ -56,4 +56,4 @@
 ## 如果这个项目对你有帮助，请我喝杯<del style="font-size: 14px;">咖啡</del>奶茶吧😘
 |支付宝|微信|
 |---|---|
-<img src="https://ha.jiluxinqing.com/img/alipay.png" align="left" height="160" alt="支付宝" title="支付宝">  |  <img src="https://ha.jiluxinqing.com/img/wechat.png" align="left" height="160" alt="微信支付" title="微信">
+<img src="https://github.com/shaonianzhentan/image/raw/main/ha_wechat/pay_alipay.png" align="left" height="160" alt="支付宝" title="支付宝">  |  <img src="https://github.com/shaonianzhentan/image/raw/main/ha_wechat/pay_wechat.png" align="left" height="160" alt="微信支付" title="微信">
