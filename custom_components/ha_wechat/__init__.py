@@ -12,7 +12,7 @@ import paho.mqtt.client as mqtt
 import logging, json, time, uuid
 
 from .EncryptHelper import EncryptHelper
-from .const import DOMAIN
+from .const import DOMAIN, CONVERSATION_ASSISTANT
 
 _LOGGER = logging.getLogger(__name__)
 CONFIG_SCHEMA = cv.deprecated(DOMAIN)
@@ -147,7 +147,7 @@ class Wechat():
             print(ex)
 
     async def async_process(self, text, conversation_id):
-        conversation = self.hass.data.get('conversation_voice')
+        conversation = self.hass.data.get(CONVERSATION_ASSISTANT)
         plain = '请安装最新版语音助手'
         if conversation is not None:
             result = await conversation.recognize(text, conversation_id)

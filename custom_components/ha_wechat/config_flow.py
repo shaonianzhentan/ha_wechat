@@ -6,7 +6,7 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigFlow
 from homeassistant.data_entry_flow import FlowResult
 import urllib
-from .const import DOMAIN
+from .const import DOMAIN, CONVERSATION_ASSISTANT
 
 DATA_SCHEMA = vol.Schema({
     vol.Required("uid"): str,
@@ -25,7 +25,7 @@ class SimpleConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_show_form(step_id="user", data_schema=DATA_SCHEMA)
 
         # 检测是否配置语音小助手
-        if self.hass.data.get('conversation_voice') is None:
+        if self.hass.data.get(CONVERSATION_ASSISTANT) is None:
             return self.async_show_form(step_id="user", data_schema=DATA_SCHEMA, errors = {
                 'base': 'conversation'
             })
