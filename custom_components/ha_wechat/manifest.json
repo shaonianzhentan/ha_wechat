@@ -1,6 +1,6 @@
 {
     "domain": "ha_wechat",
-    "name": "HomeAssistant\u5FAE\u4FE1\u63A7\u5236",
+    "name": "\u5FAE\u4FE1\u63A7\u5236",
     "version": "2023.7.18",
     "config_flow": true,
     "documentation": "https://github.com/shaonianzhentan/ha_wechat",
