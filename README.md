@@ -30,14 +30,10 @@
 
 请先安装配置这个组件：https://github.com/shaonianzhentan/conversation
 
-- 首先需要先关注公众号 `HomeAssistant家庭助理`
-- 然后发送 `打开控制模式` 获取订阅主题和用户ID
-- 发送命令后，进入控制模式
-- 在HomeAssistant集成中添加本插件，配置相关信息
-- 最后微信就可以发送控制命令啦
+- 首先安装HA插件，然后关注公众号 `HomeAssistant家庭助理`
+- 将二维码数据发送到公众号进行关联
+- 成功后就就可以使用微信发送控制命令啦
 - 如果不想使用了，发送 `关闭控制模式`，然后卸载插件即可
-
-微信教程：https://mp.weixin.qq.com/s/LTsE90PxkbWU9GvWxKJf1A
 
 ## 小程序
 
@@ -48,7 +44,6 @@
 |支付宝|微信|
 |---|---|
 <img src="https://github.com/shaonianzhentan/image/raw/main/ha_wechat/alipay.jpg" align="left" height="160" alt="支付宝小程序" title="支付宝小程序">  |  <img src="https://github.com/shaonianzhentan/image/raw/main/ha_wechat/wechat.jpg" align="left" height="160" alt="微信小程序" title="微信小程序">
-
 
 ## 功能截图
 ![img](https://github.com/shaonianzhentan/image/raw/main/node-red-contrib-ha-wechat/3.png)

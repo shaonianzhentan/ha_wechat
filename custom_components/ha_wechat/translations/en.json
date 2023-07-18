@@ -2,12 +2,9 @@
     "config": {
         "step": {
             "user": {
-                "title": "HomeAssistant家庭助理",
-                "description": "使用微信控制HomeAssistant",
-                "data": {
-                    "uid": "用户ID",
-                    "topic": "订阅主题"
-                }
+                "title": "HomeAssistant微信控制",
+                "description": "安装本插件可以使用以下方式控制HomeAssistant \n\n【HomeAssistant家庭助理】微信公众号 \n【HomeAssistant家庭助理】微信小程序 \n【家庭助理】支付宝小程序",
+                "data": {}
             }
         },
         "error": {

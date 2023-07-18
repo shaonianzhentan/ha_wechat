@@ -5,42 +5,35 @@ import voluptuous as vol
 
 from homeassistant.config_entries import ConfigFlow
 from homeassistant.data_entry_flow import FlowResult
-import urllib
-from .const import DOMAIN
+import uuid
+from .const import CONVERSATION_ASSISTANT
+from .util import async_generate_qrcode
+from .manifest import manifest
 
-DATA_SCHEMA = vol.Schema({
-    vol.Required("uid"): str,
-    vol.Required("topic"): str
-})
+DOMAIN = manifest.domain
+DATA_SCHEMA = vol.Schema({})
 
 class SimpleConfigFlow(ConfigFlow, domain=DOMAIN):
 
-    VERSION = 1
+    VERSION = 2
 
-    async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+        
+        if self._async_current_entries():
+            return self.async_abort(reason="single_instance_allowed")
 
         if user_input is None:
             return self.async_show_form(step_id="user", data_schema=DATA_SCHEMA)
 
         # 检测是否配置语音小助手
-        if self.hass.data.get('conversation_voice') is None:
+        if self.hass.data.get(CONVERSATION_ASSISTANT) is None:
             return self.async_show_form(step_id="user", data_schema=DATA_SCHEMA, errors = {
                 'base': 'conversation'
             })
+  
+        key = str(uuid.uuid4()).replace('-', '')
+        topic = str(uuid.uuid1()).replace('-', '')
 
-        topic = user_input['topic'].replace('/wechat', '')
-        user_input['topic'] = topic
-        uid = user_input['uid']
+        await async_generate_qrcode(self.hass, topic, key)
 
-        # 检测是否安装
-        if self.hass.data.get(DOMAIN + uid) is not None:
-            return self.async_abort(reason="single_instance_allowed")
-
-        qrc = urllib.parse.quote(f'ha:{uid}#{topic}')
-        await self.hass.services.async_call('persistent_notification', 'create', {
-                    'title': '使用【HomeAssistant家庭助理】小程序扫码关联',
-                    'message': f'[![qrcode](https://cdn.dotmaui.com/qrc/?t={qrc})](https://github.com/shaonianzhentan/ha_wechat) <font size="6">内含密钥和订阅主题<br/>请勿截图分享</font>'
-                })
-        return self.async_create_entry(title=uid[:10], data=user_input)
+        return self.async_create_entry(title=DOMAIN, data={ 'topic': topic, 'key': key })
