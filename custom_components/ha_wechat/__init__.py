@@ -12,6 +12,7 @@ import logging, json, time, uuid, aiohttp, urllib
 from .util import async_generate_qrcode
 from .EncryptHelper import EncryptHelper
 from .manifest import manifest
+from .const import CONVERSATION_ASSISTANT
 
 _LOGGER = logging.getLogger(__name__)
 DOMAIN = manifest.domain
@@ -171,6 +172,18 @@ class HaMqtt():
                 'name': attrs.get('friendly_name'),
                 'icon': attrs.get('icon'),
                 'state': state.state
+            }
+        elif msg_type == 'conversation':
+            conversation = self.hass.data.get(CONVERSATION_ASSISTANT)
+            plain = '请安装最新版语音助手'
+            if conversation is not None:
+                text = msg_data['text']
+                res = await conversation.recognize(text)
+                intent_result = res.response
+                # 推送回复消息
+                plain = intent_result.speech['plain']
+            result = {
+                'text': plain
             }
 
         if result is not None:
