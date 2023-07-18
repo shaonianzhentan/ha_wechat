@@ -32,11 +32,10 @@ class SimpleConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_show_form(step_id="user", data_schema=DATA_SCHEMA, errors = {
                 'base': 'conversation'
             })
-
-        # 验证token        
-        token = user_input['token']
+  
+        key = str(uuid.uuid4()).replace('-', '')
         topic = str(uuid.uuid1()).replace('-', '')
-        
-        await async_generate_qrcode(self.hass, topic, token)
 
-        return self.async_create_entry(title=DOMAIN, data={ 'topic': topic, 'token': token })
+        await async_generate_qrcode(self.hass, topic, key)
+
+        return self.async_create_entry(title=DOMAIN, data={ 'topic': topic, 'key': key })

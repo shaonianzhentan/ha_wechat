@@ -2,6 +2,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import CoreState, HomeAssistant, Context, split_entity_id
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.network import get_url
+from homeassistant.const import __version__ as current_version
 from homeassistant.const import (
     EVENT_HOMEASSISTANT_STARTED,
     EVENT_STATE_CHANGED,
@@ -20,14 +21,14 @@ DOMAIN = manifest.domain
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     config = entry.data
     topic = config['topic']
-    token = config['token']
+    key = config['key']
     hass.data[DOMAIN] = await hass.async_add_executor_job(HaMqtt, hass, {
         'topic': topic,
-        'token': token
+        'key': key
     })
 
     async def qrcode_service(service):
-        await async_generate_qrcode(hass, topic, token)
+        await async_generate_qrcode(hass, topic, key)
 
     hass.services.async_register(DOMAIN, 'qrcode', qrcode_service)
     return True
@@ -42,7 +43,7 @@ class HaMqtt():
     def __init__(self, hass, config):
         self.hass = hass
         self.topic = config.get('topic')
-        self.token = config.get('token')
+        self.key = config.get('key')
         self.msg_cache = {}
         self.is_connected = False
 
@@ -53,7 +54,7 @@ class HaMqtt():
 
     @property
     def encryptor(self):
-        return EncryptHelper(self.token, time.strftime('%Y-%m-%d', time.localtime()))
+        return EncryptHelper(self.key, time.strftime('%Y-%m-%d', time.localtime()))
 
     def connect(self, event=None):
         HOST = 'test.mosquitto.org'
@@ -139,14 +140,15 @@ class HaMqtt():
         print(data)
         result = None
 
-        if msg_type == 'rest': # REST API
-            base_url = get_url(self.hass).strip('/')
-            method = msg_data['method'].lower()
-            url = base_url + msg_data['path']
-            if method == 'get':
-                result = await self.async_http_get(url, body)
-            elif method == 'post':
-                result = await self.async_http_post(url, body)
+        if msg_type == 'join':
+            self.hass.async_create_task(self.hass.services.async_call('persistent_notification', 'create', {
+                'title': '微信控制',
+                'message': f'{msg_data.get("name")}加入成功'
+            }))
+            result = {
+                'ha_version': current_version,
+                'version': manifest.version
+            }
         elif msg_type == '/api/states':
             states = self.hass.states.async_all(body)
             def states_all(state):
@@ -193,20 +195,3 @@ class HaMqtt():
                 'type': msg_type,
                 'data': result
             })
-
-    async def async_http_post(self, url, data):
-        headers = {
-            "Authorization": f"Bearer {self.token}",
-            "content-type": "application/json",
-        }
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, data=json.dumps(data), headers=headers) as response:
-                return await response.json()
-
-    async def async_http_get(self, url, data):
-        headers = {
-            "Authorization": f"Bearer {self.token}",
-        }
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, params=data, headers=headers) as response:
-                return await response.json()
