@@ -11,9 +11,7 @@ from .util import async_generate_qrcode
 from .manifest import manifest
 
 DOMAIN = manifest.domain
-DATA_SCHEMA = vol.Schema({
-    vol.Required("token"): str
-})
+DATA_SCHEMA = vol.Schema({})
 
 class SimpleConfigFlow(ConfigFlow, domain=DOMAIN):
 
