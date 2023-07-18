@@ -3,7 +3,7 @@
         "step": {
             "user": {
                 "title": "HomeAssistant微信控制",
-                "description": "使用微信、支付宝控制HomeAssistant",
+                "description": "使用微信【HomeAssistant家庭助理】公众号、小程序，支付宝【家庭助理】小程序 控制HomeAssistant",
                 "data": {
                     "token": "HomeAssistant长令牌"
                 }
