@@ -2,11 +2,10 @@
     "config": {
         "step": {
             "user": {
-                "title": "HomeAssistant家庭助理",
-                "description": "使用微信控制HomeAssistant",
+                "title": "HomeAssistant微信控制",
+                "description": "使用微信、支付宝控制HomeAssistant",
                 "data": {
-                    "uid": "用户ID",
-                    "topic": "订阅主题"
+                    "token": "HomeAssistant长令牌"
                 }
             }
         },

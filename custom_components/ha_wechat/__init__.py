@@ -1,81 +1,58 @@
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import CoreState, HomeAssistant, Context
+from homeassistant.core import CoreState, HomeAssistant, Context, split_entity_id
 import homeassistant.helpers.config_validation as cv
-import re, urllib
-
+from homeassistant.helpers.network import get_url
 from homeassistant.const import (
     EVENT_HOMEASSISTANT_STARTED,
     EVENT_STATE_CHANGED,
 )
-
 import paho.mqtt.client as mqtt
-import logging, json, time, uuid
+import logging, json, time, uuid, aiohttp, urllib
 
+from .util import async_generate_qrcode
 from .EncryptHelper import EncryptHelper
-from .const import DOMAIN, CONVERSATION_ASSISTANT
+from .manifest import manifest
 
 _LOGGER = logging.getLogger(__name__)
-CONFIG_SCHEMA = cv.deprecated(DOMAIN)
+DOMAIN = manifest.domain
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     config = entry.data
-    wx = await hass.async_add_executor_job(
-        Wechat,
-        hass,
-        config
-    )
-    uid = config.get('uid')
-    hass.data[DOMAIN + uid] = wx
+    topic = config['topic']
+    token = config['token']
+    hass.data[DOMAIN] = await hass.async_add_executor_job(HaMqtt, hass, {
+        'topic': topic,
+        'token': token
+    })
 
-    # 注册二维码服务
-    if hass.services.has_service(DOMAIN, 'qrcode') == False:
-        async def qrcode_service(service):
-            data = service.data
-            uid = data.get('uid')
-            topic = data.get('topic')
+    async def qrcode_service(service):
+        await async_generate_qrcode(hass, topic, token)
 
-            wx = hass.data.get(DOMAIN + uid)
-            if wx is None:
-                await persistent_notification(hass, '请先添加集成进行配置')
-                return
-            elif wx.is_connected == False:
-                await persistent_notification(hass, '当前服务未连接，请重载集成后再试')
-                return
-
-            qrc = urllib.parse.quote(f'ha:{uid}#{topic}')
-            await persistent_notification(hass, f'[![qrcode](https://cdn.dotmaui.com/qrc/?t={qrc})](https://github.com/shaonianzhentan/ha_wechat) <font size="6">内含密钥和订阅主题<br/>请勿截图分享</font>',
-                                          '使用【HomeAssistant家庭助理】小程序扫码关联')
-
-        hass.services.async_register(DOMAIN, 'qrcode', qrcode_service)
+    hass.services.async_register(DOMAIN, 'qrcode', qrcode_service)
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    config = entry.data
-    uid = config.get('uid')
-    topic = config.get('topic')
-
-    key = DOMAIN + uid
-    hass.data[key].unload()
-    del hass.data[key]
+    hass.data[DOMAIN].unload()
+    del hass.data[DOMAIN]
     return True
 
-async def persistent_notification(hass, message, title='HomeAssistant家庭助理'):
-    await hass.services.async_call('persistent_notification', 'create', { 'title': title, 'message': message })
-
-class Wechat():
+class HaMqtt():
 
     def __init__(self, hass, config):
         self.hass = hass
-        self.uid = config.get('uid')
         self.topic = config.get('topic')
+        self.token = config.get('token')
         self.msg_cache = {}
-        self.encryptor = EncryptHelper(self.uid, 'ha-wechat')
         self.is_connected = False
 
         if hass.state == CoreState.running:
             self.connect()
         else:
             hass.bus.listen_once(EVENT_HOMEASSISTANT_STARTED, self.connect)
+
+    @property
+    def encryptor(self):
+        return EncryptHelper(self.token, time.strftime('%Y-%m-%d', time.localtime()))
 
     def connect(self, event=None):
         HOST = 'test.mosquitto.org'
@@ -90,7 +67,6 @@ class Wechat():
         client.loop_start()
 
     def on_connect(self, client, userdata, flags, rc):
-        print('【ha_wechat】connectd', self.topic)
         self.client.subscribe(self.topic, 2)
         self.is_connected = True
 
@@ -116,55 +92,29 @@ class Wechat():
             now = int(time.time())
             # 判断消息是否过期(5s)
             if now - 5 > data['time']:
-                print('【ha_wechat】消息已过期')
+                print('【ha-mqtt】消息已过期')
                 return
 
             msg_id = data['id']
             # 判断消息是否已接收
             if msg_id in self.msg_cache:
-                print('【ha_wechat】消息已处理')
+                print('【ha-mqtt】消息已处理')
                 return
 
             # 设置消息为已接收
             self.msg_cache[msg_id] = now
 
-            text = data['text']
-
-            compileX = re.compile("^微信(图片|视频)(((ht|f)tps?):\/\/([\w\-]+(\.[\w\-]+)*\/)*[\w\-]+(\.[\w\-]+)*\/?(\?([\w\-\.,@?^=%&:\/~\+#]*)+)?)")
-            findX = compileX.findall(text)
-            if len(findX) > 0:
-                mc = findX[0]
-                self.hass.bus.fire('ha_wechat', {
-                    'type': 'image' if mc[0] == '图片' else 'video',
-                    'url': mc[1]
-                })
-                return
-
-            # 调用语音小助手API
-            self.hass.loop.create_task(self.async_process(text, conversation_id=msg_id))
+            # 消息处理
+            self.hass.async_create_task(self.async_handle_message(data))
 
         except Exception as ex:
             print(ex)
 
-    async def async_process(self, text, conversation_id):
-        conversation = self.hass.data.get(CONVERSATION_ASSISTANT)
-        plain = '请安装最新版语音助手'
-        if conversation is not None:
-            result = await conversation.recognize(text, conversation_id)
-            intent_result = result.response
-            # 推送回复消息
-            plain = intent_result.speech['plain']
-
-        topic = f'ha_wechat/{conversation_id}'
-        _LOGGER.debug(topic)
-        _LOGGER.debug(plain)
-        await self.hass.async_add_executor_job(self.publish, topic, plain)
-
     def on_subscribe(self, client, userdata, mid, granted_qos):
-        print("【ha_wechat】On Subscribed: qos = %d" % granted_qos)
+        print("【ha_mqtt】On Subscribed: qos = %d" % granted_qos)
 
     def on_disconnect(self, client, userdata, rc):
-        print("【ha_wechat】Unexpected disconnection %s" % rc)
+        print("【ha_mqtt】Unexpected disconnection %s" % rc)
         self.is_connected = False
 
     def publish(self, topic, data):
@@ -176,4 +126,74 @@ class Wechat():
 
         # 加密消息
         payload = self.encryptor.Encrypt(json.dumps(data))
-        self.client.publish(topic, payload, qos=0)
+        self.client.publish(topic, payload, qos=1)
+
+    async def async_handle_message(self, data):
+        msg_id = data['id']
+        msg_topic = data['topic']
+        msg_type = data['type']
+        msg_data = data['data']
+        
+        body = msg_data.get('data', {})
+        print(data)
+        result = None
+
+        if msg_type == 'rest': # REST API
+            base_url = get_url(self.hass).strip('/')
+            method = msg_data['method'].lower()
+            url = base_url + msg_data['path']
+            if method == 'get':
+                result = await self.async_http_get(url, body)
+            elif method == 'post':
+                result = await self.async_http_post(url, body)
+        elif msg_type == '/api/states':
+            states = self.hass.states.async_all(body)
+            def states_all(state):
+                attrs = state.attributes
+                return {
+                    'id': state.entity_id,
+                    'name': attrs.get('friendly_name'),
+                    'icon': attrs.get('icon'),
+                    'state': state.state
+                }
+            result = list(map(states_all, states))
+        elif msg_type == '/api/domains':
+            states = self.hass.states.async_all()
+            def states_all(state):
+                domain = split_entity_id(state.entity_id)[0]
+                return domain
+            result = list(set(map(states_all, states)))
+        elif msg_type == '/api/states/entity_id':
+            state = self.hass.states.get(body)
+            attrs = state.attributes
+            result = {
+                'id': state.entity_id,
+                'name': attrs.get('friendly_name'),
+                'icon': attrs.get('icon'),
+                'state': state.state
+            }
+
+        if result is not None:
+            self.publish(msg_topic, {
+                'id': msg_id,
+                'time': int(time.time()),
+                'type': msg_type,
+                'data': result
+            })
+
+    async def async_http_post(self, url, data):
+        headers = {
+            "Authorization": f"Bearer {self.token}",
+            "content-type": "application/json",
+        }
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, data=json.dumps(data), headers=headers) as response:
+                return await response.json()
+
+    async def async_http_get(self, url, data):
+        headers = {
+            "Authorization": f"Bearer {self.token}",
+        }
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, params=data, headers=headers) as response:
+                return await response.json()
