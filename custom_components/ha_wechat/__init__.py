@@ -137,7 +137,7 @@ class HaMqtt():
         msg_data = data['data']
         
         body = msg_data.get('data', {})
-        print(data)
+        _LOGGER.debug(data)
         result = None
 
         if msg_type == 'join':
@@ -177,16 +177,13 @@ class HaMqtt():
             }
         elif msg_type == 'conversation':
             conversation = self.hass.data.get(CONVERSATION_ASSISTANT)
-            plain = '请安装最新版语音助手'
+            result = { 'speech': '请安装最新版语音助手' }
             if conversation is not None:
                 text = msg_data['text']
                 res = await conversation.recognize(text)
                 intent_result = res.response
                 # 推送回复消息
-                plain = intent_result.speech['plain']
-            result = {
-                'text': plain
-            }
+                result = intent_result.speech['plain']
 
         if result is not None:
             self.publish(msg_topic, {
