@@ -1,6 +1,7 @@
 import urllib
 
 async def async_generate_qrcode(hass, topic, token):
+    ''' 生成二维码 '''
     key = f'ha:{token}#{topic}'
     qrc = urllib.parse.quote(key)
     await hass.services.async_call('persistent_notification', 'create', {

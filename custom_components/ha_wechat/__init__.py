@@ -1,3 +1,6 @@
+import paho.mqtt.client as mqtt
+import logging, json, time, datetime, uuid, aiohttp, urllib
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import CoreState, HomeAssistant, Context, split_entity_id
 import homeassistant.helpers.config_validation as cv
@@ -7,8 +10,9 @@ from homeassistant.const import (
     EVENT_HOMEASSISTANT_STARTED,
     EVENT_STATE_CHANGED,
 )
-import paho.mqtt.client as mqtt
-import logging, json, time, uuid, aiohttp, urllib
+
+from homeassistant.components.recorder.util import session_scope
+from homeassistant.components.recorder import get_instance, history
 
 from .util import async_generate_qrcode
 from .EncryptHelper import EncryptHelper
@@ -131,6 +135,7 @@ class HaMqtt():
         self.client.publish(topic, payload, qos=1)
 
     async def async_handle_message(self, data):
+        hass = self.hass
         msg_id = data['id']
         msg_topic = data['topic']
         msg_type = data['type']
@@ -141,7 +146,8 @@ class HaMqtt():
         result = None
 
         if msg_type == 'join':
-            self.hass.async_create_task(self.hass.services.async_call('persistent_notification', 'create', {
+            # 加入提醒
+            hass.async_create_task(hass.services.async_call('persistent_notification', 'create', {
                 'title': '微信控制',
                 'message': f'{msg_data.get("name")}加入成功'
             }))
@@ -149,9 +155,11 @@ class HaMqtt():
                 'ha_version': current_version,
                 'version': manifest.version
             }
-        elif msg_type == '/api/states':
-            states = self.hass.states.async_all(body)
-            def states_all(state):
+        elif msg_type == 'api/states':
+            # 实体状态
+            entity_ids = msg_data.get('entity_ids', [])
+            def format_state(state):
+                ''' 格式化实体 '''
                 attrs = state.attributes
                 return {
                     'id': state.entity_id,
@@ -159,24 +167,43 @@ class HaMqtt():
                     'icon': attrs.get('icon'),
                     'state': state.state
                 }
-            result = list(map(states_all, states))
-        elif msg_type == '/api/domains':
-            states = self.hass.states.async_all()
-            def states_all(state):
-                domain = split_entity_id(state.entity_id)[0]
-                return domain
-            result = list(set(map(states_all, states)))
-        elif msg_type == '/api/states/entity_id':
-            state = self.hass.states.get(body)
-            attrs = state.attributes
-            result = {
-                'id': state.entity_id,
-                'name': attrs.get('friendly_name'),
-                'icon': attrs.get('icon'),
-                'state': state.state
-            }
+            states = hass.states.async_all()
+            if len(entity_ids) > 0:
+                states = filter(lambda state: entity_ids.count(state.entity_id) > 0, states)
+            result = list(map(format_state, states))
+        elif msg_type == 'api/history/period':
+            # 历史数据
+            start_time = msg_data.get('start_time')
+            end_time = msg_data.get('end_time')
+            entity_ids = msg_data.get('entity_ids', [])
+            result = []
+            with session_scope(hass=hass, read_only=True) as session:
+                res = await get_instance(hass).async_add_executor_job(
+                    history.get_significant_states_with_session,
+                    hass,
+                    session,
+                    datetime.datetime.fromisoformat(start_time),
+                    datetime.datetime.fromisoformat(end_time),
+                    entity_ids,
+                    None,
+                    True,
+                    True,
+                    False,
+                    False,
+                )
+                def format_state(state):
+                  ''' 格式化实体 '''
+                  attrs = state.attributes
+                  return {
+                      'id': state.entity_id,
+                      'name': attrs.get('friendly_name'),
+                      'icon': attrs.get('icon'),
+                      'state': state.state
+                  }
+                for arr in res.values():
+                  result.append(list(map(format_state, arr)))
         elif msg_type == 'conversation':
-            conversation = self.hass.data.get(CONVERSATION_ASSISTANT)
+            conversation = hass.data.get(CONVERSATION_ASSISTANT)
             result = { 'speech': '请安装最新版语音助手' }
             if conversation is not None:
                 text = msg_data['text']
