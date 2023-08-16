@@ -12,7 +12,7 @@ from homeassistant.const import (
 )
 
 from homeassistant.components.recorder.util import session_scope
-from homeassistant.components.recorder import history
+from homeassistant.components.recorder import get_instance, history
 
 from .util import async_generate_qrcode
 from .EncryptHelper import EncryptHelper
@@ -155,9 +155,9 @@ class HaMqtt():
                 'ha_version': current_version,
                 'version': manifest.version
             }
-        elif msg_type == '/api/states':
+        elif msg_type == 'api/states':
             # 实体状态
-            entity_ids = body.get('entity_ids', [])
+            entity_ids = msg_data.get('entity_ids', [])
             def format_state(state):
                 ''' 格式化实体 '''
                 attrs = state.attributes
@@ -171,26 +171,37 @@ class HaMqtt():
             if len(entity_ids) > 0:
                 states = filter(lambda state: entity_ids.count(state.entity_id) > 0, states)
             result = list(map(format_state, states))
-        elif msg_type == '/api/history/period':
+        elif msg_type == 'api/history/period':
             # 历史数据
-            start_time = body.get('start_time')
-            end_time = body.get('end_time')
-            entity_ids = body.get('entity_ids', [])
+            start_time = msg_data.get('start_time')
+            end_time = msg_data.get('end_time')
+            entity_ids = msg_data.get('entity_ids', [])
+            result = []
             with session_scope(hass=hass, read_only=True) as session:
-                result = list(
-                        history.get_significant_states_with_session(
-                            hass,
-                            session,
-                            start_time=datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S'),
-                            end_time=datetime.strptime(end_time, '%Y-%m-%d %H:%M:%S'),
-                            entity_ids=entity_ids,
-                            filters=None,
-                            include_start_time_state=True,
-                            significant_changes_only=True,
-                            minimal_response=True,
-                            no_attributes=False,
-                        ).values()
-                    )
+                res = await get_instance(hass).async_add_executor_job(
+                    history.get_significant_states_with_session,
+                    hass,
+                    session,
+                    datetime.datetime.fromisoformat(start_time),
+                    datetime.datetime.fromisoformat(end_time),
+                    entity_ids,
+                    None,
+                    True,
+                    True,
+                    False,
+                    False,
+                )
+                def format_state(state):
+                  ''' 格式化实体 '''
+                  attrs = state.attributes
+                  return {
+                      'id': state.entity_id,
+                      'name': attrs.get('friendly_name'),
+                      'icon': attrs.get('icon'),
+                      'state': state.state
+                  }
+                for arr in res.values():
+                  result.append(list(map(format_state, arr)))
         elif msg_type == 'conversation':
             conversation = hass.data.get(CONVERSATION_ASSISTANT)
             result = { 'speech': '请安装最新版语音助手' }
