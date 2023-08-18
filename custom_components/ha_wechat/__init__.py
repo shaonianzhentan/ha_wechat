@@ -131,7 +131,7 @@ class HaMqtt():
             self.client.loop_start()
 
         # 加密消息
-        payload = self.encryptor.Encrypt(json.dumps(data))
+        payload = self.encryptor.Encrypt(json.dumps(data, cls=CJsonEncoder))
         self.client.publish(topic, payload, qos=1)
 
     async def async_handle_message(self, data):
@@ -155,6 +155,17 @@ class HaMqtt():
                 'ha_version': current_version,
                 'version': manifest.version
             }
+        elif msg_type == 'api/services':
+            # 调用服务
+            service = msg_data.get('service')
+            self.call_service(service, body)
+            result = {}
+            entity_id = body.get('entity_id')
+            if entity_id is not None:
+                state = hass.states.get(entity_id)
+                if state is not None:
+                  result = state.as_dict()
+
         elif msg_type == 'api/states':
             # 实体状态
             entity_ids = msg_data.get('entity_ids', [])
@@ -193,12 +204,11 @@ class HaMqtt():
                 )
                 def format_state(state):
                   ''' 格式化实体 '''
-                  attrs = state.attributes
                   return {
                       'id': state.entity_id,
-                      'name': attrs.get('friendly_name'),
-                      'icon': attrs.get('icon'),
-                      'state': state.state
+                      'state': state.state,
+                      'attrs': state.attributes,
+                      'utime': state.last_updated,
                   }
                 for arr in res.values():
                   result.append(list(map(format_state, arr)))
@@ -219,3 +229,17 @@ class HaMqtt():
                 'type': msg_type,
                 'data': result
             })
+
+    def call_service(self, service, data={}):
+      arr = service.split('.')      
+      self.hass.async_create_task(self.hass.services.async_call(arr[0], arr[1], data))
+
+
+class CJsonEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime.datetime):
+            return obj.strftime('%Y-%m-%d %H:%M:%S')
+        elif isinstance(obj, datetime.date):
+            return obj.strftime('%Y-%m-%d')
+        else:
+            return json.JSONEncoder.default(self, obj)
