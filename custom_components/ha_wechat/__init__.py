@@ -134,16 +134,15 @@ class HaMqtt():
         payload = self.encryptor.Encrypt(json.dumps(data, cls=CJsonEncoder))
         self.client.publish(topic, payload, qos=1)
 
-    async def async_handle_message(self, data):
+    async def async_handle_data(self, data):
+        ''' 数据处理 '''
+        _LOGGER.debug(data)
         hass = self.hass
-        msg_id = data['id']
-        msg_topic = data['topic']
+        result = None
         msg_type = data['type']
         msg_data = data['data']
         
         body = msg_data.get('data', {})
-        _LOGGER.debug(data)
-        result = None
 
         if msg_type == 'join':
             # 加入提醒
@@ -221,6 +220,15 @@ class HaMqtt():
                 intent_result = res.response
                 # 推送回复消息
                 result = intent_result.speech['plain']
+
+        return result
+
+    async def async_handle_message(self, data):
+        msg_id = data['id']
+        msg_topic = data['topic']
+        msg_type = data['type']
+        
+        result = await self.async_handle_data(data)
 
         if result is not None:
             self.publish(msg_topic, {
