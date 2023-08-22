@@ -18,11 +18,13 @@ from .util import async_generate_qrcode
 from .EncryptHelper import EncryptHelper
 from .manifest import manifest
 from .const import CONVERSATION_ASSISTANT
+from .http import HttpApi
 
 _LOGGER = logging.getLogger(__name__)
 DOMAIN = manifest.domain
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    hass.http.register_view(HttpApi)
     config = entry.data
     topic = config['topic']
     key = config['key']
@@ -153,6 +155,11 @@ class HaMqtt():
             result = {
                 'ha_version': current_version,
                 'version': manifest.version
+            }
+        elif msg_type == 'ping':
+            result = {
+              'ha_version': current_version,
+              'version': manifest.version
             }
         elif msg_type == 'api/services':
             # 调用服务

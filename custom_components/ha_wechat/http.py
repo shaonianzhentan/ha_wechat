@@ -1,6 +1,7 @@
 '''
 小程序局域网通信协议
 '''
+import time, uuid
 from homeassistant.components.http import HomeAssistantView
 from .manifest import manifest
 
@@ -24,6 +25,13 @@ class HttpApi(HomeAssistantView):
         if ha.key == key and ha.topic == topic:
             result = await ha.async_handle_data(data)
             if result is not None:
-              return self.json(result)
+              msg_id = data.get('id')
+              msg_type = data.get('type')
+              return self.json({
+                'id': str(uuid.uuid4()),
+                'time': int(time.time()),
+                'type': msg_type,
+                'data': result
+            })
 
         return self.json_message("没有权限", status_code=401)
