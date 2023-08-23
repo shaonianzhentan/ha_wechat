@@ -1,5 +1,5 @@
 import paho.mqtt.client as mqtt
-import logging, json, time, datetime, uuid, aiohttp, urllib
+import logging, json, time, datetime
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import CoreState, HomeAssistant, Context, split_entity_id
@@ -18,11 +18,13 @@ from .util import async_generate_qrcode
 from .EncryptHelper import EncryptHelper
 from .manifest import manifest
 from .const import CONVERSATION_ASSISTANT
+from .http import HttpApi
 
 _LOGGER = logging.getLogger(__name__)
 DOMAIN = manifest.domain
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    hass.http.register_view(HttpApi)
     config = entry.data
     topic = config['topic']
     key = config['key']
@@ -134,16 +136,15 @@ class HaMqtt():
         payload = self.encryptor.Encrypt(json.dumps(data, cls=CJsonEncoder))
         self.client.publish(topic, payload, qos=1)
 
-    async def async_handle_message(self, data):
+    async def async_handle_data(self, data):
+        ''' 数据处理 '''
+        _LOGGER.debug(data)
         hass = self.hass
-        msg_id = data['id']
-        msg_topic = data['topic']
+        result = None
         msg_type = data['type']
         msg_data = data['data']
         
         body = msg_data.get('data', {})
-        _LOGGER.debug(data)
-        result = None
 
         if msg_type == 'join':
             # 加入提醒
@@ -154,6 +155,11 @@ class HaMqtt():
             result = {
                 'ha_version': current_version,
                 'version': manifest.version
+            }
+        elif msg_type == 'ping':
+            result = {
+              'ha_version': current_version,
+              'version': manifest.version
             }
         elif msg_type == 'api/services':
             # 调用服务
@@ -176,7 +182,8 @@ class HaMqtt():
                     'id': state.entity_id,
                     'name': attrs.get('friendly_name'),
                     'icon': attrs.get('icon'),
-                    'state': state.state
+                    'state': state.state,
+                    'attrs': attrs,
                 }
             states = hass.states.async_all()
             if len(entity_ids) > 0:
@@ -221,6 +228,15 @@ class HaMqtt():
                 intent_result = res.response
                 # 推送回复消息
                 result = intent_result.speech['plain']
+
+        return result
+
+    async def async_handle_message(self, data):
+        msg_id = data['id']
+        msg_topic = data['topic']
+        msg_type = data['type']
+        
+        result = await self.async_handle_data(data)
 
         if result is not None:
             self.publish(msg_topic, {

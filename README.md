@@ -35,15 +35,11 @@
 - 成功后就就可以使用微信发送控制命令啦
 - 如果不想使用了，发送 `关闭控制模式`，然后卸载插件即可
 
-## 小程序
+## 微信小程序
 
-推荐使用微信小程序控制
+公众号同名小程序：`HomeAssistant家庭助理`
 
-注意：在iOS系统中无法添加小程序到桌面，这个时候可以使用支付宝小程序
-
-|支付宝|微信|
-|---|---|
-<img src="https://github.com/shaonianzhentan/image/raw/main/ha_wechat/alipay.jpg" align="left" height="160" alt="支付宝小程序" title="支付宝小程序">  |  <img src="https://github.com/shaonianzhentan/image/raw/main/ha_wechat/wechat.jpg" align="left" height="160" alt="微信小程序" title="微信小程序">
+<img src="https://github.com/shaonianzhentan/image/raw/main/ha_wechat/wechat.jpg" height="160" alt="微信小程序" title="微信小程序">
 
 ## 功能截图
 ![img](https://github.com/shaonianzhentan/image/raw/main/node-red-contrib-ha-wechat/3.png)
