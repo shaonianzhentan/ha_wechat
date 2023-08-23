@@ -1,5 +1,5 @@
 import paho.mqtt.client as mqtt
-import logging, json, time, datetime, uuid, aiohttp, urllib
+import logging, json, time, datetime
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import CoreState, HomeAssistant, Context, split_entity_id
@@ -182,7 +182,8 @@ class HaMqtt():
                     'id': state.entity_id,
                     'name': attrs.get('friendly_name'),
                     'icon': attrs.get('icon'),
-                    'state': state.state
+                    'state': state.state,
+                    'attrs': attrs,
                 }
             states = hass.states.async_all()
             if len(entity_ids) > 0:
