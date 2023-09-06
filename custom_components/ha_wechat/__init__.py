@@ -17,7 +17,7 @@ from homeassistant.components.recorder import get_instance, history
 from .util import async_generate_qrcode
 from .EncryptHelper import EncryptHelper
 from .manifest import manifest
-from .const import CONVERSATION_ASSISTANT
+from .const import CONVERSATION_ASSISTANT, PLATFORMS
 from .http import HttpApi
 
 _LOGGER = logging.getLogger(__name__)
@@ -37,12 +37,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await async_generate_qrcode(hass, topic, key)
 
     hass.services.async_register(DOMAIN, 'qrcode', qrcode_service)
+
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data[DOMAIN].unload()
     del hass.data[DOMAIN]
-    return True
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 class HaMqtt():
 
