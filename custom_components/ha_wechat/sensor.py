@@ -1,14 +1,35 @@
 from homeassistant.components.sensor import SensorEntity
+from homeassistant.helpers.entity import DeviceInfo, Entity
 
-class WechatSensor(SensorEntity):
+from .manifest import manifest
 
-    def __init__(self, entry):
+async def async_setup_entry(hass, config_entry, async_add_entities):
+    ha_mqtt = hass.data[manifest.domain]
+    async_add_entities([WeChatSensor(config_entry, ha_mqtt)])
+
+class WeChatSensor(SensorEntity):
+
+    def __init__(self, entry, ha_mqtt):
         self._attr_unique_id = entry.entry_id
-        self._attr_name = "HomeAssistant家庭助理"
+        self._attr_name = "微信控制"
         self._attr_icon = 'mdi:wechat'
+        self._attr_device_info = DeviceInfo(
+            name="HomeAssistant家庭助理",
+            manufacturer='shaonianzhentan',
+            model='ha_wechat',
+            configuration_url=manifest.documentation,
+            identifiers={(manifest.domain, 'shaonianzhentan')},
+        )
+        self.ha_mqtt = ha_mqtt
+        self._attr_extra_state_attributes = {
+          'receive_time': None
+        }
+
+    @property
+    def state(self):
+      return '连接成功' if self.ha_mqtt.is_connected else '断开连接'
 
     async def async_update(self):
-      self._attr_native_value = ''
       self._attr_extra_state_attributes = {
-          '连接数': 1
+        'receive_time': self.ha_mqtt.msg_time
       }
