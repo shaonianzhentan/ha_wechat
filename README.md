@@ -21,6 +21,12 @@
 
 [![Add Integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start?domain=ha_wechat)
 
+## 蓝图
+
+接收微信发送的图片和视频
+
+[![导入蓝图](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fshaonianzhentan%2Fha_wechat%2Fblob%2Fmain%2Fblueprints%2Fha_wechat.yaml)
+
 ## 使用说明
 
 本服务使用公共MQTT开放服务，消息采用加密传输，如遇异常信息，请联系我
@@ -40,9 +46,6 @@
 公众号同名小程序：`HomeAssistant家庭助理`
 
 <img src="https://github.com/shaonianzhentan/image/raw/main/ha_wechat/wechat.jpg" height="160" alt="微信小程序" title="微信小程序">
-
-## 功能截图
-![img](https://github.com/shaonianzhentan/image/raw/main/node-red-contrib-ha-wechat/3.png)
 
 ## 如果这个项目对你有帮助，请我喝杯<del style="font-size: 14px;">咖啡</del>奶茶吧😘
 |支付宝|微信|
