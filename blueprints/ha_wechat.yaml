@@ -21,8 +21,8 @@ trigger:
   event_type: ha_wechat
 action:
 - variables:
-    type: '{{ trigger.event.data.data.type }}'
-    url: '{{ trigger.event.data.data.url }}'
+    type: '{{ trigger.event.data.type }}'
+    url: '{{ trigger.event.data.url }}'
 - choose:
   - conditions:
     - '{{ type == "image" }}'
