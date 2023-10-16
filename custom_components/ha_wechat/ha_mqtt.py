@@ -1,5 +1,5 @@
 import paho.mqtt.client as mqtt
-import json, time, datetime, logging
+import json, time, datetime, logging, re
 
 from homeassistant.core import CoreState
 from homeassistant.const import __version__ as current_version
@@ -195,10 +195,22 @@ class HaMqtt():
                 for arr in res.values():
                   result.append(list(map(format_state, arr)))
         elif msg_type == 'conversation':
+            text = msg_data['text']
+            
+            # 微信文件            
+            compileX = re.compile("^微信(图片|视频)(((ht|f)tps?):\/\/([\w\-]+(\.[\w\-]+)*\/)*[\w\-]+(\.[\w\-]+)*\/?(\?([\w\-\.,@?^=%&:\/~\+#]*)+)?)")
+            findX = compileX.findall(text)
+            if len(findX) > 0:
+                mc = findX[0]
+                hass.bus.fire('ha_wechat', {
+                    'type': 'image' if mc[0] == '图片' else 'video',
+                    'url': mc[1]
+                })
+                return { 'speech': '触发HomeAssistant事件' }
+
             conversation = hass.data.get(CONVERSATION_ASSISTANT)
             result = { 'speech': '请安装最新版语音助手' }
             if conversation is not None:
-                text = msg_data['text']
                 res = await conversation.recognize(text)
                 intent_result = res.response
                 # 推送回复消息
