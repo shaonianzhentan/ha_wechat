@@ -88,7 +88,7 @@ class HaMqtt():
             self.msg_cache[msg_id] = now
 
             # 消息处理
-            self.hass.async_create_task(self.async_handle_message(data))
+            self.hass.create_task(self.async_handle_message(data))
 
         except Exception as ex:
             print(ex)
@@ -123,7 +123,7 @@ class HaMqtt():
 
         if msg_type == 'join':
             # 加入提醒
-            hass.async_create_task(hass.services.async_call('persistent_notification', 'create', {
+            hass.create_task(hass.services.async_call('persistent_notification', 'create', {
                 'title': '微信控制',
                 'message': f'{msg_data.get("name")}加入成功'
             }))
@@ -235,7 +235,7 @@ class HaMqtt():
 
     def call_service(self, service, data={}):
       arr = service.split('.')      
-      self.hass.async_create_task(self.hass.services.async_call(arr[0], arr[1], data))
+      self.hass.create_task(self.hass.services.async_call(arr[0], arr[1], data))
 
 
 class CJsonEncoder(json.JSONEncoder):
