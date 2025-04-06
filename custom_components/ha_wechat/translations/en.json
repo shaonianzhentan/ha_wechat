@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "家庭助理微信控制",
-        "description": "安装本插件可以使用【HomeAssistant家庭助理】微信小程序控制Home Assistant",
+        "description": "安装本插件可以使用微信小程序控制Home Assistant",
         "data": {}
       }
     },

@@ -14,7 +14,7 @@ class WeChatSensor(SensorEntity):
         self._attr_name = "微信控制"
         self._attr_icon = 'mdi:wechat'
         self._attr_device_info = DeviceInfo(
-            name="家庭助理小程序",
+            name="家庭助理【微信小程序】",
             manufacturer='shaonianzhentan',
             model='ha_wechat',
             configuration_url=manifest.documentation,

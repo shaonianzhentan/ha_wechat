@@ -27,6 +27,6 @@ async def async_generate_qrcode(hass, topic, token):
 
     # 在通知中显示二维码
     await hass.services.async_call('persistent_notification', 'create', {
-        'title': '关联控制',
-        'message': f'## 小程序扫码关联 <br/> ![qrcode](data:image/png;base64,{img_base64}) <br/> 内含密钥和订阅主题, 请勿截图分享'
+        'title': '小程序扫码关联',
+        'message': f'![qrcode](data:image/png;base64,{img_base64}) <br/> 内含密钥和订阅主题, 请勿截图分享'
     })
