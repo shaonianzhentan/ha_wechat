@@ -12,9 +12,9 @@
 
 安装完成重启HA，刷新一下页面，在集成里搜索`ha_wechat`即可
 
+[![Add Integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start?domain=ha_wechat)
+
 ## 微信小程序
 
 <img src="https://github.com/shaonianzhentan/image/raw/main/ha_wechat/wechat.jpg" alt="微信小程序" title="微信小程序">
-
-[![Add Integration](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start?domain=ha_wechat)
 
