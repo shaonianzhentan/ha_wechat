@@ -1,17 +1,15 @@
 {
-    "config": {
-        "step": {
-            "user": {
-                "title": "HomeAssistant微信控制",
-                "description": "安装本插件可以使用以下方式控制HomeAssistant \n\n【HomeAssistant家庭助理】微信公众号 \n【HomeAssistant家庭助理】微信小程序",
-                "data": {}
-            }
-        },
-        "error": {
-            "conversation": "请先安装配置语音小助手  https://github.com/shaonianzhentan/conversation"
-        },
-        "abort": {
-            "single_instance_allowed": "仅允许单个配置."
-        }
+  "config": {
+    "step": {
+      "user": {
+        "title": "家庭助理微信控制",
+        "description": "安装本插件可以使用【HomeAssistant家庭助理】微信小程序控制Home Assistant",
+        "data": {}
+      }
+    },
+    "error": {},
+    "abort": {
+      "single_instance_allowed": "仅允许单个配置."
     }
+  }
 }

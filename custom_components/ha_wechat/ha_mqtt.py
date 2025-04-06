@@ -1,5 +1,8 @@
 import paho.mqtt.client as mqtt
-import json, time, datetime, logging, re
+import json
+import time
+import datetime
+import logging
 
 from homeassistant.core import CoreState
 from homeassistant.const import __version__ as current_version
@@ -7,14 +10,13 @@ from homeassistant.const import (
     EVENT_HOMEASSISTANT_STARTED
 )
 
-from homeassistant.components.recorder.util import session_scope
-from homeassistant.components.recorder import get_instance, history
-
 from .EncryptHelper import EncryptHelper
 from .manifest import manifest
-from .const import CONVERSATION_ASSISTANT
+
+from .assist import async_assistant
 
 _LOGGER = logging.getLogger(__name__)
+
 
 class HaMqtt():
 
@@ -25,6 +27,8 @@ class HaMqtt():
         self.msg_cache = {}
         self.msg_time = None
         self.is_connected = False
+
+        self.entities = []
 
         if hass.state == CoreState.running:
             self.connect()
@@ -38,7 +42,7 @@ class HaMqtt():
     def connect(self, event=None):
         HOST = 'test.mosquitto.org'
         PORT = 1883
-        client = mqtt.Client()        
+        client = mqtt.Client()
         self.client = client
         client.on_connect = self.on_connect
         client.on_message = self.on_message
@@ -53,6 +57,9 @@ class HaMqtt():
 
     def unload(self):
         self.client.disconnect()
+
+    def update_entities(self, entities):
+        self.entities = entities
 
     # 清理缓存消息
     def clear_cache_msg(self):
@@ -70,7 +77,8 @@ class HaMqtt():
             _LOGGER.debug(data)
             self.clear_cache_msg()
 
-            self.msg_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+            self.msg_time = time.strftime(
+                '%Y-%m-%d %H:%M:%S', time.localtime())
 
             now = int(time.time())
             # 判断消息是否过期(5s)
@@ -118,7 +126,7 @@ class HaMqtt():
         result = None
         msg_type = data['type']
         msg_data = data['data']
-        
+
         body = msg_data.get('data', {})
 
         if msg_type == 'join':
@@ -131,90 +139,30 @@ class HaMqtt():
                 'ha_version': current_version,
                 'version': manifest.version
             }
-        elif msg_type == 'ping':
-            result = {
-              'ha_version': current_version,
-              'version': manifest.version
-            }
         elif msg_type == 'api/services':
             # 调用服务
             service = msg_data.get('service')
             self.call_service(service, body)
             result = {}
-            entity_id = body.get('entity_id')
-            if entity_id is not None:
-                state = hass.states.get(entity_id)
-                if state is not None:
-                  result = state.as_dict()
-
+            state = self.get_state(body.get('entity_id'))
+            if state is not None:
+                result = state
         elif msg_type == 'api/states':
             # 实体状态
             entity_ids = msg_data.get('entity_ids', [])
-            def format_state(state):
-                ''' 格式化实体 '''
-                attrs = state.attributes
-                return {
-                    'id': state.entity_id,
-                    'name': attrs.get('friendly_name'),
-                    'icon': attrs.get('icon'),
-                    'state': state.state,
-                    'attrs': attrs,
-                }
-            states = hass.states.async_all()
+            states = []
             if len(entity_ids) > 0:
-                states = filter(lambda state: entity_ids.count(state.entity_id) > 0, states)
-            result = list(map(format_state, states))
-        elif msg_type == 'api/history/period':
-            # 历史数据
-            start_time = msg_data.get('start_time')
-            end_time = msg_data.get('end_time')
-            entity_ids = msg_data.get('entity_ids', [])
-            result = []
-            with session_scope(hass=hass, read_only=True) as session:
-                res = await get_instance(hass).async_add_executor_job(
-                    history.get_significant_states_with_session,
-                    hass,
-                    session,
-                    datetime.datetime.fromisoformat(start_time),
-                    datetime.datetime.fromisoformat(end_time),
-                    entity_ids,
-                    None,
-                    True,
-                    True,
-                    False,
-                    False,
-                )
-                def format_state(state):
-                  ''' 格式化实体 '''
-                  return {
-                      'id': state.entity_id,
-                      'state': state.state,
-                      'attrs': state.attributes,
-                      'utime': state.last_updated,
-                  }
-                for arr in res.values():
-                  result.append(list(map(format_state, arr)))
-        elif msg_type == 'conversation':
-            text = msg_data['text']
-            
-            # 微信文件            
-            compileX = re.compile("^微信(图片|视频)(((ht|f)tps?):\/\/([\w\-]+(\.[\w\-]+)*\/)*[\w\-]+(\.[\w\-]+)*\/?(\?([\w\-\.,@?^=%&:\/~\+#]*)+)?)")
-            findX = compileX.findall(text)
-            if len(findX) > 0:
-                mc = findX[0]
-                hass.bus.fire('ha_wechat', {
-                    'type': 'image' if mc[0] == '图片' else 'video',
-                    'url': mc[1]
-                })
-                return { 'speech': '触发HomeAssistant事件' }
-
-            conversation = hass.data.get(CONVERSATION_ASSISTANT)
-            result = { 'speech': '请安装最新版语音助手' }
-            if conversation is not None:
-                res = await conversation.recognize(text)
-                intent_result = res.response
-                # 推送回复消息
-                result = intent_result.speech['plain']
+                for entity_id in entity_ids:
+                    state = self.get_state(entity_id)
+                    if state is not None:
+                        states.append(state)
+            result = states
+        elif msg_type == 'api/conversation':
+            # 对话
+            result = '未检测到语音助手功能'
+            res = await async_assistant(hass, body)
+            if res is not None:
+                result = res
 
         return result
 
@@ -222,7 +170,7 @@ class HaMqtt():
         msg_id = data['id']
         msg_topic = data['topic']
         msg_type = data['type']
-        
+
         result = await self.async_handle_data(data)
 
         if result is not None:
@@ -234,8 +182,18 @@ class HaMqtt():
             })
 
     def call_service(self, service, data={}):
-      arr = service.split('.')      
-      self.hass.async_create_task(self.hass.services.async_call(arr[0], arr[1], data))
+        ''' 调用服务 '''
+        arr = service.split('.')
+        self.hass.async_create_task(
+            self.hass.services.async_call(arr[0], arr[1], data))
+
+    def get_state(self, entity_id):
+        ''' 获取实体状态 '''
+        if entity_id is not None:
+            state = self.hass.states.get(entity_id)
+            if state is not None:
+                return state.as_dict()
+        return None
 
 
 class CJsonEncoder(json.JSONEncoder):
