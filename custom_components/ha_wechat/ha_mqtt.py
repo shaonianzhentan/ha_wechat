@@ -29,7 +29,6 @@ class HaMqtt():
         self.msg_time = None
         self.is_connected = False
 
-
         if hass.state == CoreState.running:
             self.connect()
         else:
@@ -137,8 +136,11 @@ class HaMqtt():
             }))
             result = {
                 'ha_version': current_version,
-                'version': manifest.version
+                'version': manifest.version,
+                'entities': self.entities,
             }
+        elif msg_type == 'get/entities':
+            return self.entities
         elif msg_type == 'api/services':
             # 调用服务
             service = msg_data.get('service')
