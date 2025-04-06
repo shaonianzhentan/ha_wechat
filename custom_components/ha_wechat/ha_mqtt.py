@@ -24,11 +24,11 @@ class HaMqtt():
         self.hass = hass
         self.topic = config.get('topic')
         self.key = config.get('key')
+        self.entities = config.get('entities', [])
         self.msg_cache = {}
         self.msg_time = None
         self.is_connected = False
 
-        self.entities = []
 
         if hass.state == CoreState.running:
             self.connect()

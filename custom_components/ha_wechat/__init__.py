@@ -11,13 +11,16 @@ DOMAIN = manifest.domain
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     config = entry.data
+    # 
     topic = config['topic']
     key = config['key']
+    entities = entry.options.get("entities", [])
 
     # 初始化 HaMqtt 实例
     hass.data[DOMAIN] = await hass.async_add_executor_job(HaMqtt, hass, {
         'topic': topic,
-        'key': key
+        'key': key,
+        'entities': entities
     })
 
     async def qrcode_service(service):

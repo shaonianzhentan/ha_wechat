@@ -13,24 +13,25 @@ from homeassistant.helpers import selector
 DOMAIN = manifest.domain
 DATA_SCHEMA = vol.Schema({})
 
+
 class SimpleConfigFlow(ConfigFlow, domain=DOMAIN):
 
-    VERSION = 2
+    VERSION = 3
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> FlowResult:
-        
+
         if self._async_current_entries():
             return self.async_abort(reason="single_instance_allowed")
 
         if user_input is None:
             return self.async_show_form(step_id="user", data_schema=DATA_SCHEMA)
-  
+
         key = str(uuid.uuid4()).replace('-', '')
         topic = str(uuid.uuid1()).replace('-', '')
 
         await async_generate_qrcode(self.hass, topic, key)
 
-        return self.async_create_entry(title=DOMAIN, data={ 'topic': topic, 'key': key })
+        return self.async_create_entry(title=DOMAIN, data={'topic': topic, 'key': key})
 
     @staticmethod
     def async_get_options_flow(config_entry):
