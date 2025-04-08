@@ -1,11 +1,9 @@
 import paho.mqtt.client as mqtt
 import json
 import time
-import datetime
 import logging
 
 from homeassistant.core import CoreState
-from homeassistant.const import __version__ as current_version
 from homeassistant.const import (
     EVENT_HOMEASSISTANT_STARTED
 )
@@ -40,7 +38,6 @@ class HaMqtt():
          # 初始化状态变化处理器
         self.state_handler = StateChangedHandler(hass, self)
         self.entity_helper = EntityHelper(hass)
-
 
     @property
     def encryptor(self):
@@ -103,7 +100,7 @@ class HaMqtt():
             self.msg_cache[msg_id] = now
 
             # 消息处理
-            self.hass.async_create_task(self.async_handle_message(data))
+            self.hass.create_task(self.async_handle_message(data))
 
         except Exception as ex:
             print(ex)
@@ -123,7 +120,7 @@ class HaMqtt():
             self.client.loop_start()
 
         # 加密消息
-        payload = self.encryptor.Encrypt(json.dumps(data, cls=CJsonEncoder))
+        payload = self.encryptor.Encrypt(json.dumps(data))
         self.client.publish(topic, payload, qos=1)
 
     async def async_handle_data(self, data):
@@ -140,7 +137,7 @@ class HaMqtt():
             # 加入
             states = []
             for entity_id in self.entities:
-                state = self.get_state(entity_id)
+                state = await self.get_state(entity_id)
                 if state is not None:
                     states.append(state)
             result = states
@@ -177,13 +174,3 @@ class HaMqtt():
     async def get_state(self, entity_id):
         ''' 获取实体状态 '''
         return await self.entity_helper.get_entity_info(entity_id)
-
-
-class CJsonEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, datetime.datetime):
-            return obj.strftime('%Y-%m-%d %H:%M:%S')
-        elif isinstance(obj, datetime.date):
-            return obj.strftime('%Y-%m-%d')
-        else:
-            return json.JSONEncoder.default(self, obj)

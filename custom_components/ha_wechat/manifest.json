@@ -1,7 +1,7 @@
 {
     "domain": "ha_wechat",
     "name": "家庭助理【微信小程序】",
-    "version": "2025.4.6",
+    "version": "2025.4.8",
     "config_flow": true,
     "documentation": "https://github.com/shaonianzhentan/ha_wechat",
     "requirements": [

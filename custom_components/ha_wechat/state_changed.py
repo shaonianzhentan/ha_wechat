@@ -21,7 +21,7 @@ class StateChangedHandler:
         if entity_id in self.ha_mqtt.entities:
             new_state = event.data.get('new_state')
             if new_state:
-                state_data = self.ha_mqtt.get_state(entity_id)
+                state_data = await self.ha_mqtt.get_state(entity_id)
                 if state_data:
                     async with self.lock:
                         # 使用字典存储，确保同一实体只保留最新状态

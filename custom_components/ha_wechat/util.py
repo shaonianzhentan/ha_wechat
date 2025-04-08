@@ -5,7 +5,7 @@ import base64
 async def async_generate_qrcode(hass, topic, token):
     """生成二维码并显示在通知中"""
     # 构造二维码内容
-    key = f'ha:{token}#{topic}'
+    key = f'ha#{token}#{topic}'
 
     # 生成二维码图片
     qr = qrcode.QRCode(
