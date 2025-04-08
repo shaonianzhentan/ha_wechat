@@ -14,6 +14,9 @@ from .EncryptHelper import EncryptHelper
 from .manifest import manifest
 
 from .assist import async_assistant
+from .state_changed import StateChangedHandler
+from .entity import EntityHelper
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,6 +36,11 @@ class HaMqtt():
             self.connect()
         else:
             hass.bus.listen_once(EVENT_HOMEASSISTANT_STARTED, self.connect)
+
+         # 初始化状态变化处理器
+        self.state_handler = StateChangedHandler(hass, self)
+        self.entity_helper = EntityHelper(hass)
+
 
     @property
     def encryptor(self):
@@ -129,37 +137,20 @@ class HaMqtt():
         body = msg_data.get('data', {})
 
         if msg_type == 'join':
-            # 加入提醒
-            hass.async_create_task(hass.services.async_call('persistent_notification', 'create', {
-                'title': '微信控制',
-                'message': f'{msg_data.get("name")}加入成功'
-            }))
-            result = {
-                'ha_version': current_version,
-                'version': manifest.version,
-                'entities': self.entities,
-            }
-        elif msg_type == 'get/entities':
-            return self.entities
-        elif msg_type == 'api/services':
+            # 加入
+            states = []
+            for entity_id in self.entities:
+                state = self.get_state(entity_id)
+                if state is not None:
+                    states.append(state)
+            result = states
+        elif msg_type == 'call_service':
             # 调用服务
             service = msg_data.get('service')
-            self.call_service(service, body)
+            arr = service.split('.')
+            await self.hass.services.async_call(arr[0], arr[1], data)
             result = {}
-            state = self.get_state(body.get('entity_id'))
-            if state is not None:
-                result = state
-        elif msg_type == 'api/states':
-            # 实体状态
-            entity_ids = msg_data.get('entity_ids', [])
-            states = []
-            if len(entity_ids) > 0:
-                for entity_id in entity_ids:
-                    state = self.get_state(entity_id)
-                    if state is not None:
-                        states.append(state)
-            result = states
-        elif msg_type == 'api/conversation':
+        elif msg_type == 'conversation':
             # 对话
             result = '未检测到语音助手功能'
             res = await async_assistant(hass, body)
@@ -183,19 +174,9 @@ class HaMqtt():
                 'data': result
             })
 
-    def call_service(self, service, data={}):
-        ''' 调用服务 '''
-        arr = service.split('.')
-        self.hass.async_create_task(
-            self.hass.services.async_call(arr[0], arr[1], data))
-
-    def get_state(self, entity_id):
+    async def get_state(self, entity_id):
         ''' 获取实体状态 '''
-        if entity_id is not None:
-            state = self.hass.states.get(entity_id)
-            if state is not None:
-                return state.as_dict()
-        return None
+        return await self.entity_helper.get_entity_info(entity_id)
 
 
 class CJsonEncoder(json.JSONEncoder):
