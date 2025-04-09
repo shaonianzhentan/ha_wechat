@@ -30,6 +30,7 @@ class HaMqtt():
         self.msg_time = None
         self.receive_time = None
         self.is_connected = False
+        self.client = None
 
         if hass.state == CoreState.running:
             self.connect()
@@ -115,6 +116,8 @@ class HaMqtt():
         self.is_connected = False
 
     def publish(self, topic, data):
+        if self.client is None:
+            return
         # 判断当前连接状态
         if self.client._state == 2:
             _LOGGER.debug('断开重连')
@@ -150,7 +153,7 @@ class HaMqtt():
             # 调用服务
             service = msg_data.get('service')
             arr = service.split('.')
-            await self.hass.services.async_call(arr[0], arr[1], data)
+            await self.hass.services.async_call(arr[0], arr[1], body)
             result = {}
         elif msg_type == 'conversation':
             # 对话

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 import voluptuous as vol
 
-from homeassistant.config_entries import ConfigFlow, OptionsFlow
+from homeassistant.config_entries import ConfigFlow, OptionsFlow, ConfigEntry
 from homeassistant.data_entry_flow import FlowResult
 import uuid
 from .util import async_generate_qrcode
@@ -19,7 +19,6 @@ class SimpleConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION = 3
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> FlowResult:
-
         if self._async_current_entries():
             return self.async_abort(reason="single_instance_allowed")
 
@@ -34,7 +33,7 @@ class SimpleConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_create_entry(title=DOMAIN, data={'topic': topic, 'key': key})
 
     @staticmethod
-    def async_get_options_flow(config_entry):
+    def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
         """返回选项配置处理程序"""
         return SimpleOptionsFlowHandler(config_entry)
 
@@ -42,9 +41,9 @@ class SimpleConfigFlow(ConfigFlow, domain=DOMAIN):
 class SimpleOptionsFlowHandler(OptionsFlow):
     """处理选项配置的类"""
 
-    def __init__(self, config_entry):
+    def __init__(self, config_entry: ConfigEntry):
         """初始化选项配置"""
-        self.config_entry = config_entry
+        self._config_entry = config_entry  # 使用私有变量存储 config_entry
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """初始选项配置步骤"""
@@ -56,7 +55,7 @@ class SimpleOptionsFlowHandler(OptionsFlow):
         options_schema = vol.Schema({
             vol.Optional(
                 "entities",
-                default=self.config_entry.options.get("entities", [])
+                default=self._config_entry.options.get("entities", [])
             ): selector.EntitySelector(
                 selector.EntitySelectorConfig(multiple=True)
             )
