@@ -39,12 +39,16 @@ class EntityHelper:
                 # 翻译状态值
                 state_name = await self.translate_state(entity_id, state.state)
 
+                # 根据实体类型返回附加信息
+                attrs = self.get_attributes(entity_id, attributes)
+
                 return {
                     'id': entity_id,
                     'name': attributes.get('friendly_name', entity_id),
                     'area': area,
                     'state': state.state,
-                    'stateName': state_name
+                    'stateName': state_name,
+                    'attrs': attrs
                 }
         return None
 
@@ -59,3 +63,23 @@ class EntityHelper:
         translation_key = f"component.{domain}.entity_component._.state.{state_value}"
         # 返回翻译后的值，如果没有翻译则返回原始值
         return translations.get(translation_key, state_value)
+
+    def get_attributes(self, entity_id, attributes):
+        ''' 根据实体类型返回附加信息 '''
+        domain = entity_id.split('.')[0]  # 获取实体的域名
+        if domain in ['device_tracker', 'person']:
+            # 定位设备及人员，返回经纬度
+            return {
+                'latitude': attributes.get('latitude'),
+                'longitude': attributes.get('longitude')
+            }
+        elif domain == 'media_player':
+            # 媒体播放器，返回歌手、歌名、音量等信息
+            return {
+                'title': attributes.get('media_title'),
+                'artist': attributes.get('media_artist'),
+                'volume': attributes.get('volume_level')
+            }
+        else:
+            # 其他实体返回空
+            return {}

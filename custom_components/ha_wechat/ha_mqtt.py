@@ -28,6 +28,7 @@ class HaMqtt():
         self.entities = config.get('entities', [])
         self.msg_cache = {}
         self.msg_time = None
+        self.receive_time = None
         self.is_connected = False
 
         if hass.state == CoreState.running:
@@ -80,11 +81,12 @@ class HaMqtt():
             data = json.loads(self.encryptor.Decrypt(payload))
             _LOGGER.debug(data)
             self.clear_cache_msg()
-
+            
             self.msg_time = time.strftime(
                 '%Y-%m-%d %H:%M:%S', time.localtime())
 
             now = int(time.time())
+            self.receive_time = now
             # 判断消息是否过期(5s)
             if now - 5 > data['time']:
                 print('【ha-mqtt】消息已过期')
@@ -140,7 +142,10 @@ class HaMqtt():
                 state = await self.get_state(entity_id)
                 if state is not None:
                     states.append(state)
-            result = states
+            result = {
+                "name": self.hass.config.location_name,
+                "entities": states
+            }
         elif msg_type == 'call_service':
             # 调用服务
             service = msg_data.get('service')

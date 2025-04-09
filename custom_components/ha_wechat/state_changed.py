@@ -31,12 +31,17 @@ class StateChangedHandler:
         ''' 每 3 秒发送一次状态变化 '''
         while True:
             await asyncio.sleep(3)
+            now = time.time()
+            # 检查 receive_time 是否超过半小时
+            if self.ha_mqtt.receive_time and (int(now) - self.ha_mqtt.receive_time > 1800):
+                #_LOGGER.warning("超时未更新 receive_time，停止上报数据")
+                continue  # 跳过本次循环，不发送数据
+
             async with self.lock:
                 if self.state_changes:
                     # 获取所有状态变化
                     to_send = list(self.state_changes.values())
-                    # 发送到云端
-                    now = time.time()
+                    # 发送到云端                    
                     publish_data = {
                         'id': str(now),
                         'time': int(now),
