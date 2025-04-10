@@ -11,10 +11,10 @@ class WeChatSensor(SensorEntity):
 
     def __init__(self, entry, ha_mqtt):
         self._attr_unique_id = entry.entry_id
-        self._attr_name = "微信控制"
+        self._attr_name = "微信小程序"
         self._attr_icon = 'mdi:wechat'
         self._attr_device_info = DeviceInfo(
-            name="HomeAssistant家庭助理",
+            name="家庭助理【微信小程序】",
             manufacturer='shaonianzhentan',
             model='ha_wechat',
             configuration_url=manifest.documentation,

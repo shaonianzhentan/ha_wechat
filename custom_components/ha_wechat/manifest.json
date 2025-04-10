@@ -1,11 +1,12 @@
 {
     "domain": "ha_wechat",
-    "name": "\u5BB6\u5EAD\u52A9\u7406\u5FAE\u4FE1\u63A7\u5236",
-    "version": "2024.2.4",
+    "name": "家庭助理【微信小程序】",
+    "version": "2025.4.9",
     "config_flow": true,
     "documentation": "https://github.com/shaonianzhentan/ha_wechat",
     "requirements": [
         "paho-mqtt>=1.6.1",
+        "qrcode>=7.3.1",
         "pyDes>=2.0.1"
     ],
     "dependencies": [],
