@@ -6,7 +6,7 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 ![visit](https://visitor-badge.laobi.icu/badge?page_id=shaonianzhentan.ha_wechat&left_text=visit)
 
-[![badge](https://img.shields.io/badge/QQ群-1176703646-76beff?logo=tencentqq&style=for-the-badge)](https://qm.qq.com/cgi-bin/qm/qr?k=m4uDQuuAJCnCll6PuQZUnnJ0zEy7zuk2&jump_from=webapi&authKey=WTxRChNkBUDdVsTcYHeO8yb98Uu8WGJC3hxw53Il4PB7RgBTQ6StHa43MwZJtN5w)
+[![badge](https://img.shields.io/badge/QQ群-1176703646-76beff?logo=tencentqq&style=for-the-badge)](https://qm.qq.com/cgi-bin/qm/qr?k=GVVCU76ILA9R1sZL-UwQJmu-kKYGMGzS&jump_from=webapi&authKey=7zkeFqjKV73L9Py1kPoNRootmdKD+oOQInpoqu9O3PCKS7p94J/RJ1XbWw7gHHu0)
  
 ## 安装
 
