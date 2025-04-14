@@ -11,5 +11,17 @@
     "abort": {
       "single_instance_allowed": "仅允许单个配置."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "同步设备",
+        "description": "选择需要同步到小程序操作的实体设备",
+        "data": {
+          "entities": "设备实体"
+        }
+      }
+    },
+    "error": {}
   }
 }

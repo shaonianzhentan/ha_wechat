@@ -9,15 +9,11 @@ from homeassistant.const import (
 )
 
 from .EncryptHelper import EncryptHelper
-from .manifest import manifest
-
 from .assist import async_assistant
 from .state_changed import StateChangedHandler
 from .entity import EntityHelper
 
-
 _LOGGER = logging.getLogger(__name__)
-
 
 class HaMqtt():
 
@@ -126,7 +122,7 @@ class HaMqtt():
 
         # 加密消息
         payload = self.encryptor.Encrypt(json.dumps(data))
-        self.client.publish(topic, payload, qos=1)
+        self.client.publish(topic, payload, qos=2)
 
     async def async_handle_data(self, data):
         ''' 数据处理 '''

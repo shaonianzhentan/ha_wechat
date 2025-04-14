@@ -1,15 +1,15 @@
 {
-    "domain": "ha_wechat",
-    "name": "家庭助理【微信小程序】",
-    "version": "2025.4.9",
-    "config_flow": true,
-    "documentation": "https://github.com/shaonianzhentan/ha_wechat",
-    "requirements": [
-        "paho-mqtt>=1.6.1",
-        "qrcode>=7.3.1",
-        "pyDes>=2.0.1"
-    ],
-    "dependencies": [],
-    "codeowners": ["@shaonianzhentan"],
-    "iot_class": "cloud_push"
+  "domain": "ha_wechat",
+  "name": "\u5BB6\u5EAD\u52A9\u7406\u3010\u5FAE\u4FE1\u5C0F\u7A0B\u5E8F\u3011",
+  "version": "2025.4.14",
+  "config_flow": true,
+  "documentation": "https://github.com/shaonianzhentan/ha_wechat",
+  "requirements": [
+      "paho-mqtt>=1.6.1",
+      "qrcode>=7.3.1",
+      "pyDes>=2.0.1"
+  ],
+  "dependencies": [],
+  "codeowners": ["@shaonianzhentan"],
+  "iot_class": "cloud_push"
 }
