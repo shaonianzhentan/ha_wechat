@@ -149,7 +149,7 @@ class HaMqtt():
             # 地图实体
             all_states = self.hass.states.async_all()
             entities = [
-                await self.get_state(state, entity_id)
+                await self.get_state(state.entity_id)
                 for state in all_states
                 if state.entity_id.split('.')[0] in ['device_tracker', 'person', 'zone']
                 and 'latitude' in state.attributes
