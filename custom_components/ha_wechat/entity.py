@@ -67,18 +67,30 @@ class EntityHelper:
     def get_attributes(self, entity_id, attributes):
         ''' 根据实体类型返回附加信息 '''
         domain = entity_id.split('.')[0]  # 获取实体的域名
-        if domain in ['device_tracker', 'person']:
+        if domain in ['device_tracker', 'person', 'zone']:
             # 定位设备及人员，返回经纬度
             return {
                 'latitude': attributes.get('latitude'),
-                'longitude': attributes.get('longitude')
+                'longitude': attributes.get('longitude'),
+                'radius': attributes.get('radius')
             }
         elif domain == 'media_player':
-            # 媒体播放器，返回歌手、歌名、音量等信息
             return {
                 'title': attributes.get('media_title'),
                 'artist': attributes.get('media_artist'),
-                'volume': attributes.get('volume_level')
+                'volume': attributes.get('volume_level'),
+                'repeat': attributes.get('repeat'),
+                'shuffle': attributes.get('shuffle'),
+                'duration': attributes.get('media_duration'),
+                'position': attributes.get('media_position')
+            }
+        elif domain == 'light':
+            brightness_percentage = None
+            brightness = attributes.get('brightness')
+            if brightness is not None:
+                brightness_percentage = (brightness / 255) * 100
+            return {
+                'brightness': brightness_percentage
             }
         else:
             # 其他实体返回空
