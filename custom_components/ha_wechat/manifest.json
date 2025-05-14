@@ -1,7 +1,7 @@
 {
   "domain": "ha_wechat",
   "name": "\u5BB6\u5EAD\u52A9\u7406\u3010\u5FAE\u4FE1\u5C0F\u7A0B\u5E8F\u3011",
-  "version": "2025.4.23",
+  "version": "2025.5.14",
   "config_flow": true,
   "documentation": "https://github.com/shaonianzhentan/ha_wechat",
   "requirements": [
