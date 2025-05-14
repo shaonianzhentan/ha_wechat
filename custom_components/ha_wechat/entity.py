@@ -92,6 +92,11 @@ class EntityHelper:
             return {
                 'brightness': brightness_percentage
             }
+        elif domain == 'climate':
+            return {
+                'current_temperature': attributes.get('current_temperature'),
+                'target_temperature': attributes.get('target_temperature'),
+            }
         else:
             # 其他实体返回空
             return {}

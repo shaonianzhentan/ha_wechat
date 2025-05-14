@@ -7,11 +7,14 @@ from homeassistant.core import CoreState
 from homeassistant.const import (
     EVENT_HOMEASSISTANT_STARTED
 )
+from homeassistant.helpers.network import get_url
 
 from .EncryptHelper import EncryptHelper
 from .assist import async_assistant
 from .state_changed import StateChangedHandler
 from .entity import EntityHelper
+
+from .manifest import manifest
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -42,10 +45,11 @@ class HaMqtt():
         return EncryptHelper(self.key, time.strftime('%Y-%m-%d', time.localtime()))
 
     def connect(self, event=None):
-        HOST = 'test.mosquitto.org'
+        HOST = 'jiluxinqing.com'
         PORT = 1883
         client = mqtt.Client()
         self.client = client
+        client.username_pw_set('wxapp', 'wxapp')
         client.on_connect = self.on_connect
         client.on_message = self.on_message
         client.on_subscribe = self.on_subscribe
@@ -141,8 +145,10 @@ class HaMqtt():
                 state = await self.get_state(entity_id)
                 if state is not None:
                     states.append(state)
-            result = {
+            result = {                
                 "name": self.hass.config.location_name,
+                "host": get_url(self.hass),
+                "version": manifest.version,
                 "entities": states
             }
         elif msg_type == 'map':
