@@ -1,102 +1,145 @@
-from homeassistant.helpers import area_registry as ar, device_registry as dr, entity_registry as er
-from homeassistant.helpers.translation import async_get_translations  # 导入新的翻译方法
+"""实体 → 卡片 / 详情。
+
+只做 Home Assistant 侧的原始数据读取：区域解析、实体状态/属性原样下发、
+把 state 交给 `controls` 生成控件树。中文展示名全部由小程序内置词表处理，
+这里不再调用 Home Assistant 的翻译资源。
+"""
+
+from __future__ import annotations
+
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers import area_registry as ar
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
+
+from . import controls
+
+
+def _domain(entity_id: str) -> str:
+    return controls.domain_of(entity_id)
+
+
+def area_of(hass: HomeAssistant, entity_id: str) -> str:
+    """实体所属区域名：优先设备所在区域，其次实体自己的区域。"""
+    entity_registry = er.async_get(hass)
+    device_registry = dr.async_get(hass)
+    area_registry = ar.async_get(hass)
+
+    entry = entity_registry.async_get(entity_id)
+    area_id = None
+    if entry is not None:
+        if entry.device_id:
+            device = device_registry.async_get(entry.device_id)
+            if device is not None:
+                area_id = device.area_id
+        if not area_id:
+            area_id = entry.area_id
+
+    if area_id and area_id in area_registry.areas:
+        return area_registry.areas[area_id].name
+    return ""
+
 
 class EntityHelper:
-    def __init__(self, hass):
+    def __init__(self, hass: HomeAssistant) -> None:
         self.hass = hass
 
-    async def get_entity_info(self, entity_id):
-        ''' 获取实体的详细信息 '''
-        if entity_id is not None:
-            state = self.hass.states.get(entity_id)
-            if state is not None:
-                # 获取实体属性
-                attributes = state.attributes
+    def _area(self, entity_id: str) -> str:
+        return area_of(self.hass, entity_id)
 
-                # 获取实体注册表和设备注册表
-                entity_registry = er.async_get(self.hass)
-                device_registry = dr.async_get(self.hass)
+    def _icon(self, entity_id: str, attrs: dict) -> str | None:
+        """和 HA 前端一致：实体属性 icon 优先，其次实体注册表里的自定义图标。"""
+        icon = attrs.get("icon")
+        if icon:
+            return str(icon)
+        entry = er.async_get(self.hass).async_get(entity_id)
+        return entry.icon if entry is not None else None
 
-                # 从实体注册表中获取实体信息
-                entity_entry = entity_registry.async_get(entity_id)
-                area_id = None
+    def _available(self, state_obj) -> bool:
+        # unknown 只是暂时读不到值，仍然是一个正常实体；
+        # 只有 unavailable 才代表设备/实体不可用，卡片才需要变淡。
+        return state_obj.state != "unavailable"
 
-                if entity_entry:
-                    # 如果实体关联了设备，则从设备注册表中获取区域 ID
-                    if entity_entry.device_id:
-                        device_entry = device_registry.async_get(entity_entry.device_id)
-                        if device_entry:
-                            area_id = device_entry.area_id
-                    # 如果实体直接关联了区域，则获取区域 ID
-                    if not area_id:
-                        area_id = entity_entry.area_id
+    async def async_card(self, entity_id: str) -> dict | None:
+        """列表用的卡片：字段少，开销小。"""
+        state_obj = self.hass.states.get(entity_id)
+        if state_obj is None:
+            return None
 
-                # 获取区域注册表
-                area_registry = ar.async_get(self.hass)
-                # 根据区域 ID 获取区域名称
-                area = area_registry.areas.get(area_id).name if area_id and area_id in area_registry.areas else ''
-
-                # 翻译状态值
-                state_name = await self.translate_state(entity_id, state.state)
-
-                # 根据实体类型返回附加信息
-                attrs = self.get_attributes(entity_id, attributes)
-
-                return {
-                    'id': entity_id,
-                    'name': attributes.get('friendly_name', entity_id),
-                    'area': area,
-                    'state': state.state,
-                    'stateName': state_name,
-                    'attrs': attrs
-                }
-        return None
-
-    async def translate_state(self, entity_id, state_value):
-        ''' 翻译状态值 '''
-        # 获取 Home Assistant 的翻译资源
-        translations = await async_get_translations(
-            self.hass, self.hass.config.language, "entity_component"
+        state = state_obj.state
+        attrs = state_obj.attributes
+        flags = controls.card_flags(
+            entity_id,
+            state,
+            attrs,
+            time_zone=self.hass.config.time_zone,
         )
-        domain = entity_id.split('.')[0]  # 获取实体的域名，例如 light、sensor 等
-        # 获取翻译的键，例如 "component.automation.entity_component._.state.off"
-        translation_key = f"component.{domain}.entity_component._.state.{state_value}"
-        # 返回翻译后的值，如果没有翻译则返回原始值
-        return translations.get(translation_key, state_value)
 
-    def get_attributes(self, entity_id, attributes):
-        ''' 根据实体类型返回附加信息 '''
-        domain = entity_id.split('.')[0]  # 获取实体的域名
-        if domain in ['device_tracker', 'person', 'zone']:
-            # 定位设备及人员，返回经纬度
-            return {
-                'latitude': attributes.get('latitude'),
-                'longitude': attributes.get('longitude'),
-                'radius': attributes.get('radius')
-            }
-        elif domain == 'media_player':
-            return {
-                'title': attributes.get('media_title'),
-                'artist': attributes.get('media_artist'),
-                'volume': attributes.get('volume_level'),
-                'repeat': attributes.get('repeat'),
-                'shuffle': attributes.get('shuffle'),
-                'duration': attributes.get('media_duration'),
-                'position': attributes.get('media_position')
-            }
-        elif domain == 'light':
-            brightness_percentage = None
-            brightness = attributes.get('brightness')
-            if brightness is not None:
-                brightness_percentage = (brightness / 255) * 100
-            return {
-                'brightness': brightness_percentage
-            }
-        elif domain == 'climate':
-            return {
-                'current_temperature': attributes.get('current_temperature'),
-                'target_temperature': attributes.get('target_temperature'),
-            }
+        card = {
+            "id": entity_id,
+            "name": attrs.get("friendly_name", entity_id),
+            "area": self._area(entity_id),
+            "domain": _domain(entity_id),
+            "device_class": attrs.get("device_class"),
+            "icon": self._icon(entity_id, attrs),
+            "state": state,
+            "available": self._available(state_obj),
+            "on": state in controls.ON_STATES,
+            "toggle": flags["toggle"],
+            "action": flags["action"],
+            "value": flags["value"],
+            "unit": flags["unit"],
+            "stateName": "",
+        }
+
+        # 有数值并且没有开关时，用数值当主标题，避免卡片上出现三行字
+        if flags["value"] is not None and flags["toggle"] is None:
+            card["stateName"] = ""
+        elif flags["action"] is not None and flags["toggle"] is None:
+            # 场景/脚本/按钮的 state 是“上次触发时间”这类噪音，卡片上不显示
+            card["stateName"] = ""
         else:
-            # 其他实体返回空
-            return {}
+            # 原样返回 state，中文状态名由小程序翻译
+            card["stateName"] = state
+
+        return card
+
+    async def async_detail(self, entity_id: str) -> dict | None:
+        """详情：卡片 + 控件树 + 属性摘要。"""
+        state_obj = self.hass.states.get(entity_id)
+        if state_obj is None:
+            return None
+
+        card = await self.async_card(entity_id)
+        if card is None:
+            return None
+
+        attrs = state_obj.attributes
+        detail = dict(card)
+        detail["controls"] = controls.build_controls(entity_id, state_obj.state, attrs)
+        # 已经有控件展示的属性就不再重复列在「设备信息」里
+        control_keys = {item.get("key") for item in detail["controls"] if item.get("key")}
+
+        detail["attrs"] = controls.summarize(
+            attrs, exclude=control_keys, localize=False
+        )
+        detail["editable"] = _domain(entity_id) not in controls.READ_ONLY_DOMAINS
+        latitude = attrs.get("latitude")
+        longitude = attrs.get("longitude")
+        detail["geo"] = (
+            {
+                "latitude": latitude,
+                "longitude": longitude,
+                "radius": attrs.get("radius"),
+                # zone 属性自带 editable；YAML 定义的区域为 False
+                "editable": attrs.get("editable") is not False,
+                "home": entity_id == "zone.home",
+            }
+            if latitude is not None and longitude is not None
+            else None
+        )
+        return detail
+
+    # 兼容旧调用（relay 早期版本用的名字）
+    async def async_get(self, entity_id: str) -> dict | None:
+        return await self.async_detail(entity_id)

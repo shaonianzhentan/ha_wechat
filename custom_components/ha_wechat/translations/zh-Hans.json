@@ -1,0 +1,38 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "家庭助理微信控制",
+        "description": "提交后会生成配对二维码。本集成会把 Home Assistant 实体数据加密后发送到插件作者的中转服务器转发；服务器只转发、不存储、不分析。如介意，请停止使用本项目。",
+        "data": {}
+      },
+      "expired": {
+        "title": "二维码已失效",
+        "description": "超过 {window} 秒没有扫码。提交可重新生成二维码。",
+        "data": {}
+      }
+    },
+    "progress": {
+      "wait_for_qr": "{qr}\n\n用微信小程序扫码，{window} 秒内有效。扫码成功后本页会自动完成，无需操作。\n\n本集成会把数据加密后发送到插件作者的中转服务器转发；服务器只转发、不存储、不分析。如介意，请停止使用本项目。"
+    },
+    "abort": {
+      "device_added": "设备已添加，返回集成页即可看到新手机",
+      "device_limit": "已配对 8 台设备，请先在集成配置里删除旧设备"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "设备与实体管理",
+        "description": "推送地址已内置。可先按域或实体设定同步范围，再用排除项移除；exclude_entities 优先级最高，include_entities 可覆盖 exclude_domains。留空表示不启用该筛选。勾选已配对设备即删除（该设备需重新扫码）。",
+        "data": {
+          "remove": "删除已配对设备",
+          "include_domains": "只同步这些域（留空=不限制）",
+          "exclude_domains": "排除这些域",
+          "include_entities": "同步这些实体（可覆盖域排除）",
+          "exclude_entities": "排除这些实体（优先级最高）"
+        }
+      }
+    }
+  }
+}

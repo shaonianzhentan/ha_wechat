@@ -2,26 +2,37 @@
   "config": {
     "step": {
       "user": {
-        "title": "家庭助理微信控制",
-        "description": "安装本插件可以使用微信小程序控制Home Assistant",
+        "title": "Home Assistant WeChat Control",
+        "description": "A pairing QR code will be generated after you submit. This integration encrypts Home Assistant entity data and sends it to the author's relay server for forwarding; the server only forwards data and does not store or analyze it. If you are not comfortable with this, please stop using this project.",
+        "data": {}
+      },
+      "expired": {
+        "title": "QR code expired",
+        "description": "No scan within {window} seconds. Submit to generate a new QR code.",
         "data": {}
       }
     },
-    "error": {},
+    "progress": {
+      "wait_for_qr": "{qr}\n\nScan with the WeChat Mini Program. Valid for {window} seconds. This page completes automatically after a successful scan.\n\nThis integration encrypts data and sends it to the author's relay server for forwarding; the server only forwards data and does not store or analyze it. If you are not comfortable with this, please stop using this project."
+    },
     "abort": {
-      "single_instance_allowed": "仅允许单个配置."
+      "device_added": "设备已添加，返回集成页即可看到新手机",
+      "device_limit": "已配对 8 台设备，请先在集成配置里删除旧设备"
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "同步设备",
-        "description": "选择需要同步到小程序操作的实体设备",
+        "title": "Devices and entities",
+        "description": "The relay address is built in. Set an include scope by domain or entity, then remove items with the exclude lists. exclude_entities wins; include_entities can override exclude_domains. Leave a list empty to disable that filter. Select paired devices to remove them; they must pair again.",
         "data": {
-          "entities": "设备实体"
+          "remove": "Remove paired devices",
+          "include_domains": "Only sync these domains (empty = all)",
+          "exclude_domains": "Exclude these domains",
+          "include_entities": "Sync these entities (overrides domain exclusions)",
+          "exclude_entities": "Exclude these entities (highest priority)"
         }
       }
-    },
-    "error": {}
+    }
   }
 }
